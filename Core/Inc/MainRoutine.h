@@ -4,9 +4,6 @@
 #include <memory>
 #include <stdint.h>
 
-#include "DebugFunc.h"
-
-#include "TaskBase.h"
 #include "UartInterrupt.h"
 #include "ExUartCommunication.h"
 #include "ExternalCommunication.h"
@@ -36,6 +33,8 @@ public:
 
     std::shared_ptr<InUartCommunication> in_uart_comm_;
     std::shared_ptr<InternalCommunication> internal_comm_;
+
+
     
 
 private:

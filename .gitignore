@@ -1,5 +1,5 @@
 .pio
-**/*.d
+Debug/**/*
 **/*.o
-**/*.su
-Debug/**/*.*
+Debug/makefile
+*.tlog

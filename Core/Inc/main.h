@@ -57,20 +57,43 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define WD_Pin GPIO_PIN_0
-#define WD_GPIO_Port GPIOC
-#define SDS_CP3_Pin GPIO_PIN_1
-#define SDS_CP3_GPIO_Port GPIOC
-#define DIPSW1_2_Pin GPIO_PIN_4
-#define DIPSW1_2_GPIO_Port GPIOA
-#define DIPSW1_1_Pin GPIO_PIN_5
-#define DIPSW1_1_GPIO_Port GPIOA
-#define LED4_Pin GPIO_PIN_11
-#define LED4_GPIO_Port GPIOA
-#define LED3_Pin GPIO_PIN_12
-#define LED3_GPIO_Port GPIOA
+#define USER_Btn_Pin GPIO_PIN_13
+#define USER_Btn_GPIO_Port GPIOC
+#define USER_Btn_EXTI_IRQn EXTI15_10_IRQn
+#define MCO_Pin GPIO_PIN_0
+#define MCO_GPIO_Port GPIOH
+#define LD1_Pin GPIO_PIN_0
+#define LD1_GPIO_Port GPIOB
+#define LD3_Pin GPIO_PIN_14
+#define LD3_GPIO_Port GPIOB
+#define USB_PowerSwitchOn_Pin GPIO_PIN_6
+#define USB_PowerSwitchOn_GPIO_Port GPIOG
+#define USB_OverCurrent_Pin GPIO_PIN_7
+#define USB_OverCurrent_GPIO_Port GPIOG
+#define USB_SOF_Pin GPIO_PIN_8
+#define USB_SOF_GPIO_Port GPIOA
+#define USB_VBUS_Pin GPIO_PIN_9
+#define USB_VBUS_GPIO_Port GPIOA
+#define USB_ID_Pin GPIO_PIN_10
+#define USB_ID_GPIO_Port GPIOA
+#define USB_DM_Pin GPIO_PIN_11
+#define USB_DM_GPIO_Port GPIOA
+#define USB_DP_Pin GPIO_PIN_12
+#define USB_DP_GPIO_Port GPIOA
+#define TMS_Pin GPIO_PIN_13
+#define TMS_GPIO_Port GPIOA
+#define TCK_Pin GPIO_PIN_14
+#define TCK_GPIO_Port GPIOA
+#define LD2_Pin GPIO_PIN_7
+#define LD2_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
-
+void DebugLedGreen(uint16_t);
+void DebugLedBlue(uint16_t);
+void DebugLedRed(uint16_t);
+void DebugLedBG(uint16_t);
+void DebugLedRB(uint16_t);
+void DebugLedRG(uint16_t);
+void DebugLedRGB(uint16_t);
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

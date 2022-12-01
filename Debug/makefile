@@ -65,34 +65,34 @@ $(wildcard ../makefile.init) \
 $(wildcard ../makefile.targets) \
 
 
-BUILD_ARTIFACT_NAME := MainControlBoard
+BUILD_ARTIFACT_NAME := umigame_test
 BUILD_ARTIFACT_EXTENSION := elf
 BUILD_ARTIFACT_PREFIX :=
 BUILD_ARTIFACT := $(BUILD_ARTIFACT_PREFIX)$(BUILD_ARTIFACT_NAME)$(if $(BUILD_ARTIFACT_EXTENSION),.$(BUILD_ARTIFACT_EXTENSION),)
 
 # Add inputs and outputs from these tool invocations to the build variables 
 EXECUTABLES += \
-MainControlBoard.elf \
+umigame_test.elf \
 
 MAP_FILES += \
-MainControlBoard.map \
+umigame_test.map \
 
 SIZE_OUTPUT += \
 default.size.stdout \
 
 OBJDUMP_LIST += \
-MainControlBoard.list \
+umigame_test.list \
 
 
 # All Target
 all: main-build
 
 # Main-build Target
-main-build: MainControlBoard.elf secondary-outputs
+main-build: umigame_test.elf secondary-outputs
 
 # Tool invocations
-MainControlBoard.elf MainControlBoard.map: $(OBJS) $(USER_OBJS) C:\Users\Mukaida\STM32CubeIDE\workspace_1.10.1\MainControlBoard\STM32F446RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-g++ -o "MainControlBoard.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Mukaida\STM32CubeIDE\workspace_1.10.1\MainControlBoard\STM32F446RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="MainControlBoard.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+umigame_test.elf umigame_test.map: $(OBJS) $(USER_OBJS) C:\Users\Mukaida\STM32CubeIDE\workspace_1.10.1\umigame_test\STM32F446ZETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-g++ -o "umigame_test.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Mukaida\STM32CubeIDE\workspace_1.10.1\umigame_test\STM32F446ZETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="umigame_test.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -101,14 +101,14 @@ default.size.stdout: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	@echo 'Finished building: $@'
 	@echo ' '
 
-MainControlBoard.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "MainControlBoard.list"
+umigame_test.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "umigame_test.list"
 	@echo 'Finished building: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) MainControlBoard.elf MainControlBoard.list MainControlBoard.map default.size.stdout
+	-$(RM) default.size.stdout umigame_test.elf umigame_test.list umigame_test.map
 	-@echo ' '
 
 secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)
