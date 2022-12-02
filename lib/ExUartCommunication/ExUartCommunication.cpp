@@ -11,7 +11,7 @@ constexpr uint16_t ExUartCommunication::kRecvDataSize;
 ExUartCommunication::ExUartCommunication(
                     std::shared_ptr<UartInterrupt> uart_interrupt,
                     UART_HandleTypeDef* uart_handle)
-:   TaskBase("test", 4, 512),
+:   TaskBase("ExUartComm", 4, 512),
     uart_interrupt_(uart_interrupt), 
     uart_handle_(uart_handle),
     recv_task_(nullptr),
@@ -19,6 +19,7 @@ ExUartCommunication::ExUartCommunication(
     
 {
     recv_buffer_mutex_ = xSemaphoreCreateMutex();
+    task_que_ = xQueueCreate(256, sizeof(uint8_t));
 }
 
 
@@ -38,7 +39,6 @@ void ExUartCommunication::Init()
                                     HandleUartCallback);
 
     CreateTask();
-    HAL_UART_Receive_IT(uart_handle_, &recv_data_, 1);
 }
 
 /**
@@ -49,6 +49,11 @@ void ExUartCommunication::Init()
  */
 bool ExUartCommunication::WaitReceiveData(TickType_t timeout)
 {
+    if (!IsUartEmpty())
+    {
+        return true;
+    }
+    
     if (recv_buffer_task_ != nullptr)
     {
         return false;
@@ -99,7 +104,7 @@ bool ExUartCommunication::SendMsg(std::vector<uint8_t> msg)
     HAL_StatusTypeDef result;   /* 送信結果 */
 
     result = HAL_UART_Transmit(uart_handle_, msg.data(), msg.size(), 
-                                kUartTimeOut);
+                                30000);
     return (result == HAL_OK);
 }
 
@@ -119,7 +124,7 @@ bool ExUartCommunication::RegistNotifyHeartBeatCallback(
 }
 
 /**
- * @brief DMA受信バッファが空状態を判定する
+ * @brief 受信バッファが空状態を判定する
  * 
  * @return bool true:空 false:空ではない
  */
@@ -150,10 +155,16 @@ void ExUartCommunication::HandleUartCallback(
  * @brief 割込み通知処理
  * 
  */
-void ExUartCommunication::NotifyUartInterruptCallback()
+inline void ExUartCommunication::NotifyUartInterruptCallback()
 {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
+    /* データ取得 */
+    xQueueSendToBackFromISR(task_que_, &recv_data_, 0);
+
+    /* 割込み待ち設定 */
+    HAL_UART_Receive_IT(uart_handle_, &recv_data_, 1);
+    
     vTaskNotifyGiveFromISR(recv_task_, &xHigherPriorityTaskWoken);
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
@@ -162,18 +173,9 @@ void ExUartCommunication::NotifyUartInterruptCallback()
  * @brief UARTデータ格納処理
  *        データ待ちのタスクがあれば通知する
  */
-void ExUartCommunication::StoreUartData()
+inline void ExUartCommunication::StoreUartData()
 {
-
-    /* データ取得 */
-    xSemaphoreTake(recv_buffer_mutex_, portMAX_DELAY);
-    recv_buffer_.push(recv_data_);
-    xSemaphoreGive(recv_buffer_mutex_);
     
-    
-    /* 割込み待ち設定 */
-    HAL_UART_Receive_IT(uart_handle_, &recv_data_, 1);
-
     /* 受信通知 */
     if (recv_buffer_task_ != nullptr)
     {
@@ -191,9 +193,14 @@ void ExUartCommunication::PerformTask()
 {
     recv_task_ = xTaskGetCurrentTaskHandle();
     
+    HAL_UART_Receive_IT(uart_handle_, &recv_data_, 1);
+    
     while (1)
     {
-        ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
+        uint8_t recv_data;
+        //ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
+        xQueueReceive(task_que_, &recv_data, portMAX_DELAY);
+        recv_buffer_.push(recv_data);
         StoreUartData();
     }
 }

@@ -20,12 +20,11 @@
 #include "usart.h"
 #include "stm32f4xx_hal.h"
 
-
 class UartInterrupt
 {
 public:
     using CallbackInstance = std::shared_ptr<void>;
-    using CallbackFunc = std::function<void(std::shared_ptr<void>)>;
+    using CallbackFunc = std::function<void(CallbackInstance)>;
     ~UartInterrupt();
     
     static std::shared_ptr<UartInterrupt> GetInstance();
@@ -49,6 +48,12 @@ private:
     static std::shared_ptr<UartInterrupt> uart_interrupt_;
     CallbackInfoList callback_info_list_;
 
+    // debug
+    CallbackInstance instance_;
+    CallbackFunc func_;
+
+
 };
+
 
 #endif /* UART_INTERRUPT_H_ */

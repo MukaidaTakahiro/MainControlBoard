@@ -51,11 +51,17 @@ private:
 
     static constexpr uint8_t kPacketHeader1 = 0xFF; /* header-1 */
     static constexpr uint8_t kPacketHeader2 = 0x00; /* header-2 */
+
+    static constexpr uint16_t kIndexHeader1 = 0;
+    static constexpr uint16_t kIndexHeader2 = 1;
+    static constexpr uint16_t kIndexLength = 2;
+    
     
     enum class PacketParsingResult
     {
         kPasing,
         kReceived,
+        kMismatch,
         kSyntaxErr,
         kChecksumErr
     };
@@ -90,8 +96,9 @@ private:
 
     static void CallbackTaskFunc(std::shared_ptr<void>);
     virtual void PerformTask();
-    PacketParsingResult ParsePacket(uint8_t);
-
+    PacketParsingResult ParseSyntax(const std::vector<uint8_t>);
+    uint8_t AddChecksum(const uint8_t, const uint8_t);
+    uint8_t CalcChecksum(const std::vector<uint8_t>);
 };
 
 #endif /* EXTERNALCOMMUNICATION_H_ */

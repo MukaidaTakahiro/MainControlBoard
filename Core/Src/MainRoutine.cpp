@@ -20,18 +20,27 @@ void MainRoutine::Init()
     
     ex_uart_comm_ = std::make_shared<ExUartCommunication>(uart_interrupt_, &huart1);
     ex_uart_comm_->Init();
+
     
     ex_comm_ = std::make_shared<ExternalCommunication>(ex_uart_comm_);
     ex_comm_->Init();
 
+
+    in_uart_comm_ = std::make_shared<InUartCommunication>(uart_interrupt_, &huart3);
+    in_uart_comm_->Init();
+
+    in_comm_ = std::make_shared<InternalCommunication>(in_uart_comm_);
+
+    ex_board_ = std::make_shared<ExternalBoard>(nullptr, in_comm_, nullptr);
+
     cmd_mgr_ = std::make_shared<CommandMgr>(ex_comm_, 
                                             nullptr, 
-                                            nullptr, 
+                                            ex_board_, 
                                             nullptr, 
                                             nullptr);
 
     cmd_mgr_->Init();
-    
+
     CreateTask();
 }
 
@@ -42,21 +51,74 @@ void MainRoutine::StartRoutine()
 
 void MainRoutine::PerformTask()
 {
-    std::vector<uint8_t> msg;
+    LedBeatRtn();
+}
+
+void MainRoutine::LedBeatRtn()
+{
     while (1)
     {
-        DebugLedRed(100);
-        
-        while (!ex_uart_comm_->IsUartEmpty())
+        DebugLedBlue(500);
+    }
+    
+}
+
+void MainRoutine::PrbCommTest()
+{
+    uint16_t state = 0;
+    while (1)
+    {
+        std::vector<uint8_t> ex_msg;
+        std::vector<uint8_t> in_msg;
+
+        DebugLedBlue(100);
+
+        switch (state)
         {
-            msg.push_back(ex_uart_comm_->ReadByte());
-        }
+        case 0:
 
-        ex_uart_comm_->SendMsg(msg);
-        msg.clear();
+            while (1)
+            {
+                while (!ex_uart_comm_->IsUartEmpty())
+                {
+                    ex_msg.push_back(ex_uart_comm_->ReadByte());
+                }
+                if (ex_msg.size() > 0) break;            
+                
+                ex_uart_comm_->WaitReceiveData(portMAX_DELAY);
+            }
 
-        ex_uart_comm_->WaitReceiveData(portMAX_DELAY);
+            in_uart_comm_->SendMsg(ex_msg);
+            
+            state = 1;
+
+            break;
         
+        case 1:
+            
+            if (in_uart_comm_->WaitReceiveData(pdMS_TO_TICKS(3000)))
+            {
+                while (!in_uart_comm_->IsUartEmpty())
+                {
+                    in_msg.push_back(in_uart_comm_->ReadByte());
+                }
+            }
+            else
+            {
+                in_msg.push_back(0xCC);
+            }
+            
+            ex_uart_comm_->SendMsg(in_msg);
+
+            state = 0;
+
+            break;
+            
+            
+
+        default:
+            break;
+        }
     }
 }
 

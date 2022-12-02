@@ -50,7 +50,7 @@ bool UartInterrupt::RegistCallback(
  * @param huart 割込みハンドラ
  * @return bool 実行成否
  */
-bool UartInterrupt::ExcuteRxCpltCallback(UART_HandleTypeDef* huart)
+inline bool UartInterrupt::ExcuteRxCpltCallback(UART_HandleTypeDef* huart)
 {
     auto result = callback_info_list_.find(huart);
 
@@ -83,3 +83,11 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
     uart_interrupt->ExcuteRxCpltCallback(huart);
 }
+
+//void HAL_UART_ErrorCallback(UART_HandleTypeDef* huart)
+//{
+//    HAL_GPIO_WritePin(LED3_GPIO_Port, LED3_Pin, GPIO_PIN_SET);
+//    HAL_Delay(100);
+//    HAL_GPIO_WritePin(LED3_GPIO_Port, LED3_Pin, GPIO_PIN_RESET);
+//    HAL_Delay(100);
+//}

@@ -96,7 +96,7 @@ public:
 
 private:
     /* 定数宣言 */
-    static constexpr uint16_t kCmdArgSize = 1; /* コマンド引数のバイトサイズ   */
+    static constexpr uint16_t kCmdArgSize = 2; /* コマンド引数のバイトサイズ   */
     static constexpr uint16_t kResArgSize = 1; /* レスポンス引数のバイトサイズ */
     
     /* 変数宣言 */

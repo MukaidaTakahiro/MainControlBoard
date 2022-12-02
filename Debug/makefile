@@ -91,8 +91,8 @@ all: main-build
 main-build: MainControlBoard.elf secondary-outputs
 
 # Tool invocations
-MainControlBoard.elf MainControlBoard.map: $(OBJS) $(USER_OBJS) C:\Users\Mukaida\STM32CubeIDE\workspace_1.10.1\MainControlBoard\STM32F446RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-g++ -o "MainControlBoard.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Mukaida\STM32CubeIDE\workspace_1.10.1\MainControlBoard\STM32F446RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="MainControlBoard.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+MainControlBoard.elf MainControlBoard.map: $(OBJS) $(USER_OBJS) C:\Work\003_Git\MainControlBoard\STM32F446RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-g++ -o "MainControlBoard.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Work\003_Git\MainControlBoard\STM32F446RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="MainControlBoard.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=softfp -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

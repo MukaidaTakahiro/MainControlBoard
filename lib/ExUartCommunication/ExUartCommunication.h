@@ -72,6 +72,7 @@ private:
 
     TaskHandle_t recv_task_;
     TaskHandle_t recv_buffer_task_;
+    QueueHandle_t task_que_;
 
     std::shared_ptr<void> uart_callback_instance_; /* UART呼び出し時のコールバックインスタンス */
     NotifyHeartBeatCallback uart_callback_func_;     /* UART呼び出し時のコールバック関数 */

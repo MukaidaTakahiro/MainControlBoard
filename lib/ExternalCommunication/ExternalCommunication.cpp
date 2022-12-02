@@ -13,7 +13,6 @@
 constexpr uint8_t ExternalCommunication::kPacketHeader1;
 constexpr uint8_t ExternalCommunication::kPacketHeader2;
 
-static uint8_t AddCheckSum(uint8_t a, uint8_t b);
 
 /***********************************************************/
 /* Publicメソッド定義                                      */
@@ -97,33 +96,52 @@ bool ExternalCommunication::RegistNotifyCallback(
 
 void ExternalCommunication::PerformTask()
 {
+    std::vector<uint8_t> parse_buffer;
+
     while (1)
     {
-        while (!uart_comm_->IsUartEmpty())
-        {
-            PacketParsingResult result;
-            auto read_data = uart_comm_->ReadByte();
-            
-            result = ParsePacket(read_data);
-
-            switch (result)
-            {
-            case PacketParsingResult::kReceived:
-                notify_recv_cmd_(callback_instance_, cmd_msg_);
-                break;
-            case PacketParsingResult::kSyntaxErr:
-                notify_packet_syntax_err_(callback_instance_);
-                break;
-            case PacketParsingResult::kChecksumErr:
-                notify_checksum_err_(callback_instance_);
-                break;
-            default:
-                break;
-            }
-            
-        }
-        
         uart_comm_->WaitReceiveData(portMAX_DELAY);
+
+        PacketParsingResult result;
+        parse_buffer.push_back(uart_comm_->ReadByte());
+
+        result = ParseSyntax(parse_buffer);
+
+        uint16_t packet_length;
+
+        switch (result)
+        {
+        case PacketParsingResult::kPasing:
+            break;
+        case PacketParsingResult::kReceived:
+            packet_length = static_cast<uint16_t>(parse_buffer[kIndexLength]);
+            notify_recv_cmd_(   callback_instance_, 
+                                {   parse_buffer.begin() + 3, 
+                                    parse_buffer.begin() + packet_length - 1});
+            parse_buffer.erase( parse_buffer.begin(), 
+                                parse_buffer.begin() + packet_length);
+            break;
+
+        case PacketParsingResult::kMismatch:
+            parse_buffer.erase(parse_buffer.begin());
+            break;
+
+        case PacketParsingResult::kSyntaxErr:
+            notify_packet_syntax_err_(callback_instance_);
+            parse_buffer.erase( parse_buffer.begin(), 
+                                parse_buffer.begin() + kIndexLength + 1);
+            break;
+
+        case PacketParsingResult::kChecksumErr:
+            notify_checksum_err_(callback_instance_);
+            
+            packet_length = static_cast<uint16_t>(parse_buffer[kIndexLength]);
+            parse_buffer.erase( parse_buffer.begin(), 
+                                parse_buffer.begin() + packet_length);
+            break;
+        default:
+            break;
+        }
     }    
 }
 
@@ -133,38 +151,30 @@ void ExternalCommunication::PerformTask()
  * @param cmd コマンドメッセージ
  * @return bool true:成功 false:構文エラー
  */
-bool ExternalCommunication::SendCmdPacket(std::vector<uint8_t> cmd)
+bool ExternalCommunication::SendCmdPacket(const std::vector<uint8_t> cmd)
 {
     std::vector<uint8_t> packet; /* 送信パケット */
-    uint8_t checksum = 0x00; /* チェックサム */
 
     /* サイズチェック */
     if (cmd.size() > kMaxCmdSize || cmd.size() <= 0)
     {
         return false;
     }
-    
 
     /* header-1 */
     packet.push_back(kPacketHeader1);
-    checksum = AddCheckSum(checksum, packet.back());
 
     /* header-2 */
     packet.push_back(kPacketHeader2);
-    checksum = AddCheckSum(checksum, packet.back());
 
     /* パケット長格納 */
-    packet.push_back((uint8_t)(cmd.size() + kMinPacketSize - 1));
-    checksum = AddCheckSum(checksum, packet.back());
+    packet.push_back(static_cast<uint8_t>(cmd.size() + kMinPacketSize - 1));
 
     /* コマンド格納 */
-    for (uint16_t i = 0; i < cmd.size(); i++)
-    {
-        packet.push_back(cmd[i]);
-        checksum = AddCheckSum(checksum, packet.back());
-    }
+    packet.insert(packet.end(), cmd.begin(), cmd.end());
 
     /* チェックサム格納 */
+    uint8_t checksum = CalcChecksum(packet);
     packet.push_back(checksum);
 
     /* パケット送信 */
@@ -172,115 +182,81 @@ bool ExternalCommunication::SendCmdPacket(std::vector<uint8_t> cmd)
 }
 
 
-/**
- * @brief 取得したパケットからコマンドを抽出する
- * 
- */
 ExternalCommunication::PacketParsingResult 
-    ExternalCommunication::ParsePacket(uint8_t read_data)
+ExternalCommunication::ParseSyntax(const std::vector<uint8_t> parse_array)
 {
+	uint16_t length = parse_array.size();
 
-    PacketParsingResult result;
-
-    /* パケットの解析 */
-    switch (state_)
+    /* Header1 */
+    if (parse_array.size() <= kIndexHeader1)
     {
-    case PacketPasingState::kWaitingHeader1:
-        
-        /* 初期化 */
-        recv_data_cnt_ = 0;
-        checksum_ = 0x00;
-        cmd_msg_.clear();
-
-        /* Header-1を取得したか？ */
-        if (read_data == kPacketHeader1)
-        {
-            recv_data_cnt_++;
-            checksum_ = AddCheckSum(checksum_, read_data);
-            state_ = PacketPasingState::kWaitingHeader2;
-        }
-
-        result = PacketParsingResult::kPasing;
-
-        break;
-
-    case PacketPasingState::kWaitingHeader2:
-
-        /* Header-2を取得したか？ */
-        if (read_data == kPacketHeader2)
-        {
-            recv_data_cnt_++;
-            checksum_ = AddCheckSum(checksum_, read_data);
-            state_ = PacketPasingState::kWaitingPakcketLength;
-        }
-        else
-        {
-            /* Header-2を取得できなければ最初から */
-            state_ = PacketPasingState::kWaitingHeader1;
-        }
-
-        result = PacketParsingResult::kPasing;
-
-        break;
-
-    case PacketPasingState::kWaitingPakcketLength:
-
-        packet_length_ = (uint16_t)read_data;
-
-        /* パケット長が最小値より小さければエラー */
-        if (packet_length_ < kMinPacketSize)
-        {
-            state_ = PacketPasingState::kWaitingHeader1;
-            result = PacketParsingResult::kSyntaxErr;
-            break;
-        }
-
-        recv_data_cnt_++;
-        checksum_ = AddCheckSum(checksum_, read_data);
-        state_ = PacketPasingState::kGettingCmdData;
-        result = PacketParsingResult::kPasing;
-        break;
-
-    case PacketPasingState::kGettingCmdData:
-        cmd_msg_.push_back(read_data);
-
-        recv_data_cnt_++;
-        checksum_ = AddCheckSum(checksum_, read_data);
-        
-        if (cmd_msg_.size() + 4 == packet_length_)
-        {
-            state_ = PacketPasingState::kWaitingCheckSum;
-        }
-
-        result = PacketParsingResult::kPasing;
-
-        break;
-
-    case PacketPasingState::kWaitingCheckSum:
-
-        if (read_data != checksum_)
-        {
-            result = PacketParsingResult::kChecksumErr;
-        }
-        else
-        {
-            result = PacketParsingResult::kReceived;
-        }
-
-        state_ = PacketPasingState::kWaitingHeader1;
-
-        break;
-
-    default:
-        state_ = PacketPasingState::kWaitingHeader1;
-        result = PacketParsingResult::kPasing;
-        break;
+        return PacketParsingResult::kPasing;
     }
 
-    return result;
+    if (parse_array[kIndexHeader1] != kPacketHeader1)
+    {
+        return PacketParsingResult::kMismatch;
+    }
+    
+    /* Header2 */
+    if (parse_array.size() <= kIndexHeader2)
+    {
+        return PacketParsingResult::kPasing;
+    }
+
+    if (parse_array[kIndexHeader2] != kPacketHeader2)
+    {
+        return PacketParsingResult::kMismatch;
+    }
+
+    /* Length */
+    if (parse_array.size() <= kIndexLength)
+    {
+        return PacketParsingResult::kPasing;
+    }
+
+    uint16_t packet_length = static_cast<uint16_t>(parse_array[kIndexLength]);
+
+    if (packet_length < kMinPacketSize)
+    {
+        return PacketParsingResult::kSyntaxErr;
+    }
+
+    /* Cmd */
+    if (parse_array.size() < packet_length)
+    {
+    	if (parse_array.size() > 7)
+    	{
+    		uint8_t debug_array[100] = {0};
+    		std::copy(parse_array.begin(), parse_array.end(), debug_array);
+    		debug_array[40] = 0xff;
+    	}
+        return PacketParsingResult::kPasing;
+    }
+
+    /* Checksum */
+    uint8_t checksum 
+                = CalcChecksum({parse_array.begin(), parse_array.end() - 1});
+
+    if (checksum == parse_array.back())
+    {
+        return PacketParsingResult::kChecksumErr;
+    }
+    
+    return PacketParsingResult::kReceived;    
 }
 
 
+uint8_t ExternalCommunication::CalcChecksum(const std::vector<uint8_t> array)
+{
+    uint8_t sum = 0x00;
+    for (uint16_t i = 0; i < array.size(); i++)
+    {
+        sum = AddChecksum(sum, array[i]);
+    }
+    
+    return sum;
+}
 
 /**
  * @brief チェックサムを計算する
@@ -289,10 +265,10 @@ ExternalCommunication::PacketParsingResult
  * @param b 加算数
  * @return uint8_t 計算結果
  */
-static uint8_t AddCheckSum(uint8_t a, uint8_t b)
+uint8_t ExternalCommunication::AddChecksum(const uint8_t a, const uint8_t b)
 {
     uint16_t sum;
-    sum = (uint16_t)a + (uint16_t)b;
+    sum = static_cast<uint16_t>(a) + static_cast<uint16_t>(b);
 
-    return (uint8_t)(sum & 0x00FF);
+    return static_cast<uint8_t>(sum & 0x00FF);
 }

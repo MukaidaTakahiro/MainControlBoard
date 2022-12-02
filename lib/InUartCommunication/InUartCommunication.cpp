@@ -119,7 +119,7 @@ bool InUartCommunication::SendMsg(std::vector<uint8_t> msg)
     HAL_StatusTypeDef result;   /* 送信結果 */
 
     result = HAL_UART_Transmit(uart_handle_, msg.data(), msg.size(), 
-                                kUartTimeOut);
+                                HAL_MAX_DELAY);
     return (result == HAL_OK);
 }
 

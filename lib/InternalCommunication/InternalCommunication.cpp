@@ -11,16 +11,28 @@
 
 #include "InternalCommunication.h"
 
+constexpr uint32_t InternalCommunication::kCommTimeout;
+constexpr uint16_t InternalCommunication::kReceiveTimeout;
+constexpr uint16_t InternalCommunication::kMinPacketSize;
+constexpr uint8_t  InternalCommunication::kPacketHeader1;
+constexpr uint8_t  InternalCommunication::kPacketHeader2;
+constexpr uint16_t InternalCommunication::kHeader1Index;
+constexpr uint16_t InternalCommunication::kHeader2Index;
+constexpr uint16_t InternalCommunication::kLengthIndex;
 
 InternalCommunication::InternalCommunication(
                         std::shared_ptr<IUartCommunication> uart_comm)
-:   TaskBase("InternalComm", 1, 512), uart_comm_(uart_comm)
+:   uart_comm_(uart_comm)
 {
     receive_timer_ = xTimerCreate(  "InCmdReceiveTimer",
                                     kReceiveTimeout,
                                     pdFALSE,
                                     this,
                                     TimeoutCallbackEntry);
+}
+
+InternalCommunication::~InternalCommunication()
+{
 }
 
 /**

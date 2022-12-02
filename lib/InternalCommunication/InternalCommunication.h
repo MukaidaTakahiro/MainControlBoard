@@ -14,7 +14,7 @@
 #include "TaskBase.h"
 
 class InternalCommunication
-:   public IInternalCommunication, public TaskBase
+:   public IInternalCommunication
 {
 public:
 
@@ -23,7 +23,7 @@ public:
     ~InternalCommunication();
 
     virtual bool SendInCmdPacket(   const std::vector<uint8_t>,
-                                    std::unique_ptr<std::vector<uint8_t>>);
+                                    const std::unique_ptr<std::vector<uint8_t>>);
 
 private:
 

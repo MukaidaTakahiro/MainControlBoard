@@ -17,6 +17,7 @@
 #include "InternalCommunication.h"
 #include "InUartCommunication.h"
 #include "HeartBeat.h"
+#include "ExternalBoard.h"
 
 class MainRoutine: public TaskBase
 {
@@ -26,16 +27,19 @@ public:
 
     void Init();
     void StartRoutine();
+    void LedBeatRtn();
+    void PrbCommTest();
 
     std::shared_ptr<UartInterrupt> uart_interrupt_;
     std::shared_ptr<ExUartCommunication> ex_uart_comm_;
     std::shared_ptr<ExternalCommunication> ex_comm_;
+    std::shared_ptr<ExternalBoard> ex_board_;
     std::shared_ptr<CommandMgr> cmd_mgr_;
     std::shared_ptr<HeartBeat> heart_beat_;
 
 
     std::shared_ptr<InUartCommunication> in_uart_comm_;
-    std::shared_ptr<InternalCommunication> internal_comm_;
+    std::shared_ptr<InternalCommunication> in_comm_;
     
 
 private:
