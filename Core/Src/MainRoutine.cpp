@@ -21,7 +21,7 @@ void MainRoutine::Init()
     ex_uart_comm_ = std::make_shared<ExUartCommunication>(uart_interrupt_, &huart1);
     ex_uart_comm_->Init();
 
-    
+/*
     ex_comm_ = std::make_shared<ExternalCommunication>(ex_uart_comm_);
     ex_comm_->Init();
 
@@ -40,7 +40,7 @@ void MainRoutine::Init()
                                             nullptr);
 
     cmd_mgr_->Init();
-
+*/
     CreateTask();
 }
 
@@ -51,7 +51,8 @@ void MainRoutine::StartRoutine()
 
 void MainRoutine::PerformTask()
 {
-    LedBeatRtn();
+    //LedBeatRtn();
+	PrbCommTest();
 }
 
 void MainRoutine::LedBeatRtn()
@@ -71,7 +72,6 @@ void MainRoutine::PrbCommTest()
         std::vector<uint8_t> ex_msg;
         std::vector<uint8_t> in_msg;
 
-        DebugLedBlue(100);
 
         switch (state)
         {
@@ -88,14 +88,14 @@ void MainRoutine::PrbCommTest()
                 ex_uart_comm_->WaitReceiveData(portMAX_DELAY);
             }
 
-            in_uart_comm_->SendMsg(ex_msg);
-            
+            //in_uart_comm_->SendMsg(ex_msg);
+            ex_uart_comm_->SendMsg(ex_msg);
             state = 1;
 
             break;
         
         case 1:
-            
+            /*/
             if (in_uart_comm_->WaitReceiveData(pdMS_TO_TICKS(3000)))
             {
                 while (!in_uart_comm_->IsUartEmpty())
@@ -107,7 +107,7 @@ void MainRoutine::PrbCommTest()
             {
                 in_msg.push_back(0xCC);
             }
-            
+            */
             ex_uart_comm_->SendMsg(in_msg);
 
             state = 0;

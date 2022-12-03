@@ -12,7 +12,7 @@
 #ifndef UART_INTERRUPT_H_
 #define UART_INTERRUPT_H_
 
-#include <map>
+#include <unordered_map>
 #include <functional>
 #include <vector>
 #include <memory>
@@ -41,17 +41,17 @@ private:
     };
 
     /* Uartハンドル毎の割込みのコールバックリスト */
-    using CallbackInfoList = std::map<UART_HandleTypeDef*, CallbackInfo>;
+    using CallbackInfoList = std::unordered_map<UART_HandleTypeDef*, 
+                                                CallbackInfo>;
 
     UartInterrupt();
 
     static std::shared_ptr<UartInterrupt> uart_interrupt_;
     CallbackInfoList callback_info_list_;
 
-    // debug
+    //debug
     CallbackInstance instance_;
-    CallbackFunc func_;
-
+    CallbackFunc     func_;
 
 };
 

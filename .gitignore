@@ -2,4 +2,5 @@
 **/*.d
 **/*.o
 **/*.su
-Debug/**/*.*
+Debug
+Release

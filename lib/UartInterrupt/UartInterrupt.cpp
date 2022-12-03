@@ -59,7 +59,7 @@ inline bool UartInterrupt::ExcuteRxCpltCallback(UART_HandleTypeDef* huart)
     {
         return false;
     }
-    
+
     CallbackInstance instance = callback_info_list_[huart].instance;
     CallbackFunc func = callback_info_list_[huart].func;
     
@@ -84,10 +84,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     uart_interrupt->ExcuteRxCpltCallback(huart);
 }
 
-//void HAL_UART_ErrorCallback(UART_HandleTypeDef* huart)
-//{
-//    HAL_GPIO_WritePin(LED3_GPIO_Port, LED3_Pin, GPIO_PIN_SET);
-//    HAL_Delay(100);
-//    HAL_GPIO_WritePin(LED3_GPIO_Port, LED3_Pin, GPIO_PIN_RESET);
-//    HAL_Delay(100);
-//}
+
+void HAL_UART_ErrorCallback(UART_HandleTypeDef* huart)
+{
+    ;
+}

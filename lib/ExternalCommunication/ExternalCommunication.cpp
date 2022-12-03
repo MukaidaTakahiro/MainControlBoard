@@ -225,12 +225,12 @@ ExternalCommunication::ParseSyntax(const std::vector<uint8_t> parse_array)
     /* Cmd */
     if (parse_array.size() < packet_length)
     {
-    	if (parse_array.size() > 7)
-    	{
-    		uint8_t debug_array[100] = {0};
-    		std::copy(parse_array.begin(), parse_array.end(), debug_array);
-    		debug_array[40] = 0xff;
-    	}
+        if (parse_array.size() > 7)
+        {
+            uint8_t debug_array[100] = {0};
+            std::copy(parse_array.begin(), parse_array.end(), debug_array);
+            debug_array[40] = 0xff;
+        }
         return PacketParsingResult::kPasing;
     }
 
