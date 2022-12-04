@@ -32,6 +32,7 @@ public:
     static std::shared_ptr<UartInterrupt> GetInstance();
     
     bool RegistReceiveQueue(UART_HandleTypeDef*, QueueHandle_t*);
+    bool Init();
     bool ExcuteRxCpltCallback(UART_HandleTypeDef*);
     
 private:

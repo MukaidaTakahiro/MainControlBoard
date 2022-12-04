@@ -22,7 +22,21 @@ std::shared_ptr<UartInterrupt> UartInterrupt::GetInstance()
 bool UartInterrupt::RegistReceiveQueue(UART_HandleTypeDef* huart, QueueHandle_t* queue)
 {
     recv_info_list_[huart].recv_queue = queue;
+    return true;
 }
+
+bool UartInterrupt::Init()
+{
+    RecvInfoList::iterator itr;
+
+    for (itr = recv_info_list_.begin(); itr != recv_info_list_.end(); itr++)
+    {
+        RecvInfo* recv_info = &(itr->second);
+        HAL_UART_Receive_IT(itr->first, &(recv_info->recv_data), 1);
+    }
+    return true;
+}
+
 
 /**
  * @brief Uart割込み実行処理
