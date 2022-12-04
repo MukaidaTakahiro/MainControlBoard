@@ -34,9 +34,8 @@ ExUartCommunication::~ExUartCommunication()
 void ExUartCommunication::Init()
 {
     /* Uart割込みコールバック関数登録 */
-    uart_interrupt_->RegistCallback(uart_handle_, 
-                                    shared_from_this(), 
-                                    HandleUartCallback);
+    uart_interrupt_->RegistReceiveQueue(uart_handle_,  
+                                        &task_que_);
 
     CreateTask();
 }
@@ -198,7 +197,6 @@ void ExUartCommunication::PerformTask()
     while (1)
     {
         uint8_t recv_data;
-        //ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
         xQueueReceive(task_que_, &recv_data, portMAX_DELAY);
         recv_buffer_.push(recv_data);
         StoreUartData();

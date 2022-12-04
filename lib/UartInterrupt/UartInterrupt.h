@@ -17,6 +17,8 @@
 #include <vector>
 #include <memory>
 
+#include "FreeRTOS.h"
+#include "queue.h"
 #include "usart.h"
 #include "stm32f4xx_hal.h"
 
@@ -29,25 +31,26 @@ public:
     
     static std::shared_ptr<UartInterrupt> GetInstance();
     
-    bool RegistCallback(UART_HandleTypeDef*, CallbackInstance, CallbackFunc);
+    bool RegistReceiveQueue(UART_HandleTypeDef*, QueueHandle_t*);
     bool ExcuteRxCpltCallback(UART_HandleTypeDef*);
     
 private:
-    /* コールバック情報 */
-    struct CallbackInfo
+
+    struct RecvInfo
     {
-        CallbackInstance instance; /* 通知先のインスタンスポインタ */
-        CallbackFunc func;         /* コールバック関数             */
+        uint8_t recv_data;
+        QueueHandle_t* recv_queue;
     };
 
     /* Uartハンドル毎の割込みのコールバックリスト */
-    using CallbackInfoList = std::unordered_map<UART_HandleTypeDef*, 
-                                                CallbackInfo>;
+    using RecvInfoList = std::unordered_map<UART_HandleTypeDef*, 
+                                                RecvInfo>;
+
 
     UartInterrupt();
 
     static std::shared_ptr<UartInterrupt> uart_interrupt_;
-    CallbackInfoList callback_info_list_;
+    RecvInfoList recv_info_list_;
 
     //debug
     CallbackInstance instance_;

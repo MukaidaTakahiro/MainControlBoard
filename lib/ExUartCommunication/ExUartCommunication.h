@@ -23,8 +23,6 @@
 #include "stm32f4xx_hal.h"
 #include "usart.h"
 
-
-
 #include "TaskBase.h"
 #include "IUartCommunication.h"
 #include "INotificationUartIrq.h"

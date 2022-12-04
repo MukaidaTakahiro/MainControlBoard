@@ -60,6 +60,7 @@ private:
     SemaphoreHandle_t recv_buffer_mutex_;   /* 受信バッファ処理のmutex        */
     TaskHandle_t recv_task_;                /* 受信タスクハンドル             */
     TaskHandle_t read_buffer_task_;         /* データ読み込みタスクハンドル   */
+    QueueHandle_t task_queue_;
 
 
     /* メンバ関数 */

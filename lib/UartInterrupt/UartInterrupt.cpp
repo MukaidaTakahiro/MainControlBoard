@@ -19,29 +19,9 @@ std::shared_ptr<UartInterrupt> UartInterrupt::GetInstance()
     return uart_interrupt_;
 }
 
-
-/**
- * @brief Uart割込み時のコールバックの登録
- * 
- * @param huart 割込み元のUARTハンドル
- * @param instance コールバック先のインスタンス
- * @param func コールバック関数
- * @return bool 成否
- */
-bool UartInterrupt::RegistCallback(
-        UART_HandleTypeDef* huart, 
-        CallbackInstance instance,
-        CallbackFunc func)
+bool UartInterrupt::RegistReceiveQueue(UART_HandleTypeDef* huart, QueueHandle_t* queue)
 {
-    if (instance == nullptr || func == nullptr)
-    {
-        return false;
-    }
-
-    callback_info_list_[huart].instance = instance;
-    callback_info_list_[huart].func = func;
-    
-    return true;
+    recv_info_list_[huart].recv_queue = queue;
 }
 
 /**
@@ -52,18 +32,21 @@ bool UartInterrupt::RegistCallback(
  */
 inline bool UartInterrupt::ExcuteRxCpltCallback(UART_HandleTypeDef* huart)
 {
-    auto result = callback_info_list_.find(huart);
 
-    /* 登録チェック */
-    if (result == callback_info_list_.end())
-    {
-        return false;
-    }
+    uint8_t* recv_data_ptr = &(recv_info_list_[huart].recv_data);
+    QueueHandle_t* task_queue = recv_info_list_[huart].recv_queue;
 
-    CallbackInstance instance = callback_info_list_[huart].instance;
-    CallbackFunc func = callback_info_list_[huart].func;
-    
-    func(instance);
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+    /* データ取得 */
+    xQueueSendToBackFromISR(*task_queue, recv_data_ptr, 
+                            &xHigherPriorityTaskWoken);
+
+    /* 割込み待ち設定 */
+    HAL_UART_Receive_IT(huart, recv_data_ptr, 1);
+
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+
 
     return true;
 }

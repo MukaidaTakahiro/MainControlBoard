@@ -40,8 +40,7 @@ InUartCommunication::~InUartCommunication()
  */
 void InUartCommunication::Init()
 {
-    uart_interrupt_->RegistCallback(uart_handle_, shared_from_this(), 
-                                    HandleUartCallback);
+    uart_interrupt_->RegistReceiveQueue(uart_handle_, &task_queue_);
 }
 
 /**
