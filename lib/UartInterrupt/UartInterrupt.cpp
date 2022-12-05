@@ -19,9 +19,10 @@ std::shared_ptr<UartInterrupt> UartInterrupt::GetInstance()
     return uart_interrupt_;
 }
 
-bool UartInterrupt::RegistReceiveQueue(UART_HandleTypeDef* huart, QueueHandle_t* queue)
+bool UartInterrupt::RegistReceiveQueue( UART_HandleTypeDef* huart, 
+                                        QueueHandle_t* queue)
 {
-    recv_info_list_[huart].recv_queue = queue;
+    recv_info_list_[huart->Instance].recv_queue = queue;
     return true;
 }
 
@@ -47,8 +48,11 @@ bool UartInterrupt::Init()
 inline bool UartInterrupt::ExcuteRxCpltCallback(UART_HandleTypeDef* huart)
 {
 
-    uint8_t* recv_data_ptr = &(recv_info_list_[huart].recv_data);
-    QueueHandle_t* task_queue = recv_info_list_[huart].recv_queue;
+    
+    HAL_GPIO_WritePin(LED3_GPIO_Port, LED3_Pin, GPIO_PIN_RESET);
+    uint8_t* recv_data_ptr = &(recv_info_list_[huart->Instance].recv_data);
+    QueueHandle_t* task_queue = recv_info_list_[huart->Instance].recv_queue;
+    HAL_GPIO_WritePin(LED3_GPIO_Port, LED3_Pin, GPIO_PIN_SET);
 
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
@@ -60,7 +64,6 @@ inline bool UartInterrupt::ExcuteRxCpltCallback(UART_HandleTypeDef* huart)
     HAL_UART_Receive_IT(huart, recv_data_ptr, 1);
 
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-
 
     return true;
 }
@@ -78,7 +81,9 @@ static std::shared_ptr<UartInterrupt> uart_interrupt = UartInterrupt::GetInstanc
  */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
+    HAL_GPIO_WritePin(LED3_GPIO_Port, LED3_Pin, GPIO_PIN_SET);
     uart_interrupt->ExcuteRxCpltCallback(huart);
+    HAL_GPIO_WritePin(LED3_GPIO_Port, LED3_Pin, GPIO_PIN_RESET);
 }
 
 

@@ -16,12 +16,12 @@ constexpr uint16_t CommandMgr::kUartBufferSize;
 constexpr uint16_t CommandMgr::kMsgBufferSize;
 
 CommandMgr::CommandMgr(	const std::shared_ptr<IExternalCommunication> ex_comm,
-                        const std::shared_ptr<IThruster> thruster,
+                        const std::shared_ptr<IThrusterMgr> thruster,
                         const std::shared_ptr<IExternalBoard> ex_board,
                         const std::shared_ptr<IBmsMgr> bms_mgr,
                         const std::shared_ptr<IHeartBeat> heart_beat)
 :   ex_comm_(ex_comm), 
-    thruster_(thruster), 
+    thruster_mgr_(thruster), 
     ex_board_(ex_board), 
     bms_mgr_(bms_mgr), 
     heart_beat_(heart_beat)
@@ -220,7 +220,7 @@ std::shared_ptr<CommandBase> CommandMgr::MakeCmdInstance(uint8_t cmd_value)
         break;
 
     case kCmdControl:
-        instance = std::make_shared<CmdControl>(thruster_, ex_board_);
+        instance = std::make_shared<CmdControl>(thruster_mgr_, ex_board_);
         break;
     
     }

@@ -87,9 +87,9 @@ std::vector<uint8_t> CmdSetPrbPower::CreateResponse()
 /* CmdControl *****************************************************************/
 /******************************************************************************/
 
-CmdControl::CmdControl( const std::shared_ptr<IThruster> thruster, 
+CmdControl::CmdControl( const std::shared_ptr<IThrusterMgr> thruster, 
                         const std::shared_ptr<IExternalBoard> ex_board)
-:   CommandBase(kCmdArgSize),  thruster_(thruster), ex_board_(ex_board)
+:   CommandBase(kCmdArgSize),  thruster_mgr_(thruster), ex_board_(ex_board)
 {
 }
 
@@ -102,7 +102,7 @@ bool CmdControl::ExcuteCmd(const std::vector<uint8_t> cmd_msg)
     /* 各引数に変換 */
     std::vector<uint8_t> cmd_arg {cmd_msg.begin() + 1, cmd_msg.end()};
     CmdField cmd_field;
-    std::vector<int16_t> thruster_power_vec;
+    std::vector<uint16_t> thruster_power_vec;
 
 
     memcpy(cmd_field.cmd_arg_byte, cmd_arg.data(), cmd_arg.size());
@@ -114,7 +114,7 @@ bool CmdControl::ExcuteCmd(const std::vector<uint8_t> cmd_msg)
         std::end(cmd_field.cmd_arg_list.thruster_power));
 
     /* スラスタ値を出力 */
-    if(!thruster_->OperateThruster(thruster_power_vec))
+    if(!thruster_mgr_->OperateThruster(thruster_power_vec))
     {
         return false;
     }

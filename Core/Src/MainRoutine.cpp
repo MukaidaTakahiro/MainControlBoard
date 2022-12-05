@@ -21,7 +21,7 @@ void MainRoutine::Init()
     ex_uart_comm_ = std::make_shared<ExUartCommunication>(uart_interrupt_, &huart1);
     ex_uart_comm_->Init();
 
-/*
+
     ex_comm_ = std::make_shared<ExternalCommunication>(ex_uart_comm_);
     ex_comm_->Init();
 
@@ -40,7 +40,9 @@ void MainRoutine::Init()
                                             nullptr);
 
     cmd_mgr_->Init();
-*/
+
+    uart_interrupt_->Init();
+
     CreateTask();
 }
 
@@ -51,8 +53,8 @@ void MainRoutine::StartRoutine()
 
 void MainRoutine::PerformTask()
 {
-    //LedBeatRtn();
-	PrbCommTest();
+    LedBeatRtn();
+	//PrbCommTest();
 }
 
 void MainRoutine::LedBeatRtn()

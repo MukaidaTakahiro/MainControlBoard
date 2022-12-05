@@ -103,7 +103,7 @@ bool ExUartCommunication::SendMsg(std::vector<uint8_t> msg)
     HAL_StatusTypeDef result;   /* 送信結果 */
 
     result = HAL_UART_Transmit(uart_handle_, msg.data(), msg.size(), 
-                                30000);
+                                portMAX_DELAY);
     return (result == HAL_OK);
 }
 
@@ -139,36 +139,6 @@ bool ExUartCommunication::IsUartEmpty()
 }
 
 /**
- * @brief UART割込み処理関数
- * 
- * @param instance コールバック先のインスタンス
- */
-void ExUartCommunication::HandleUartCallback(
-                                    UartInterrupt::CallbackInstance instance)
-{
-    std::static_pointer_cast<ExUartCommunication>(instance)
-                                                ->NotifyUartInterruptCallback();
-}
-
-/**
- * @brief 割込み通知処理
- * 
- */
-inline void ExUartCommunication::NotifyUartInterruptCallback()
-{
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-
-    /* データ取得 */
-    xQueueSendToBackFromISR(task_que_, &recv_data_, 0);
-
-    /* 割込み待ち設定 */
-    HAL_UART_Receive_IT(uart_handle_, &recv_data_, 1);
-    
-    vTaskNotifyGiveFromISR(recv_task_, &xHigherPriorityTaskWoken);
-    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-}
-
-/**
  * @brief UARTデータ格納処理
  *        データ待ちのタスクがあれば通知する
  */
@@ -191,8 +161,6 @@ inline void ExUartCommunication::StoreUartData()
 void ExUartCommunication::PerformTask()
 {
     recv_task_ = xTaskGetCurrentTaskHandle();
-    
-    HAL_UART_Receive_IT(uart_handle_, &recv_data_, 1);
     
     while (1)
     {

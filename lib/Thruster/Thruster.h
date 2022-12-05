@@ -4,13 +4,21 @@
 #include <stdint.h>
 #include <vector>
 
+#include "tim.h"
+
 
 #include "IThruster.h"
 
-class Thruster:public IThruster
+class Thruster: public IThruster
 {
 public:
-    virtual bool OperateThruster(std::vector<int16_t>);
+    Thruster(TIM_HandleTypeDef* const, const uint32_t);
+    ~Thruster();
+    virtual bool SetDuty(uint32_t);
+
+private:
+    TIM_HandleTypeDef* const htim_;
+    const uint32_t channel_;
 };
 
 #endif /* THRUSTER_H_ */

@@ -1,5 +1,5 @@
-﻿#ifndef RESET_IC_H_
-#define RESET_IC_H_
+﻿#ifndef I_RESET_IC_H_
+#define I_RESET_IC_H_
 
 class IResetIc
 {
@@ -9,4 +9,4 @@ public:
 
 
 
-#endif /* RESET_IC_H_ */
+#endif /* I_RESET_IC_H_ */

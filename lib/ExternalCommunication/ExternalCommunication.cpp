@@ -186,6 +186,9 @@ ExternalCommunication::PacketParsingResult
 ExternalCommunication::ParseSyntax(const std::vector<uint8_t> parse_array)
 {
 	uint16_t length = parse_array.size();
+	// debug
+	uint8_t debug_array[256] = {0};
+	std::copy(parse_array.begin(), parse_array.end(), debug_array);
 
     /* Header1 */
     if (parse_array.size() <= kIndexHeader1)
@@ -225,20 +228,14 @@ ExternalCommunication::ParseSyntax(const std::vector<uint8_t> parse_array)
     /* Cmd */
     if (parse_array.size() < packet_length)
     {
-        if (parse_array.size() > 7)
-        {
-            uint8_t debug_array[100] = {0};
-            std::copy(parse_array.begin(), parse_array.end(), debug_array);
-            debug_array[40] = 0xff;
-        }
         return PacketParsingResult::kPasing;
     }
 
     /* Checksum */
     uint8_t checksum 
-                = CalcChecksum({parse_array.begin(), parse_array.end() - 1});
+                = CalcChecksum({parse_array.begin(), parse_array.begin() + packet_length - 1});
 
-    if (checksum == parse_array.back())
+    if (checksum != parse_array[packet_length - 1])
     {
         return PacketParsingResult::kChecksumErr;
     }

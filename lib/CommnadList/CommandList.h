@@ -16,7 +16,7 @@
 #include <memory>
 
 #include "CommandBase.h"
-#include "IThruster.h"
+#include "IThrusterMgr.h"
 #include "IExternalBoard.h"
 
 #ifdef _UNIT_TEST
@@ -116,7 +116,7 @@ class CmdControl final: public CommandBase
 {
 public:
 
-    CmdControl(const std::shared_ptr<IThruster>, const std::shared_ptr<IExternalBoard>);
+    CmdControl(const std::shared_ptr<IThrusterMgr>, const std::shared_ptr<IExternalBoard>);
     ~CmdControl();
     virtual bool ExcuteCmd(const std::vector<uint8_t> cmd_arg);
     virtual std::vector<uint8_t> CreateResponse();
@@ -133,7 +133,7 @@ private:
 
     /* 変数宣言 */
     std::vector<uint8_t> response_;
-    const std::shared_ptr<IThruster> thruster_;
+    const std::shared_ptr<IThrusterMgr> thruster_mgr_;
     const std::shared_ptr<IExternalBoard> ex_board_;
 };
 

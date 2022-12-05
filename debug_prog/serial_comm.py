@@ -18,21 +18,21 @@ test_cmd = b'\xaa\xaa\xaa\xaa\xaa'
 
 while True:
     
-        print("send:")
-        print(test_cmd)
-        ser.write(test_cmd)
-        time.sleep(2)
-        print(ser.read_all())
-        print(2)
-#
-#
-#    for cmd in prb_cmd_list:
 #        print("send:")
-#        print(cmd)
-#        ser.write(cmd)
+#        print(test_cmd)
+#        ser.write(test_cmd)
 #        time.sleep(2)
 #        print(ser.read_all())
 #        print(2)
+#
+
+    for cmd in prb_cmd_list:
+        print("send:")
+        print(cmd)
+        ser.write(cmd)
+        time.sleep(2)
+        print(ser.read_all())
+        print(2)
 
 #        ser.write(char_cmd)
 #        time.sleep(2)

@@ -8,7 +8,7 @@
 #include <memory>
 
 #include "CommandBase.h"
-#include "IThruster.h"
+#include "IThrusterMgr.h"
 #include "IExternalBoard.h"
 #include "IBmsMgr.h"
 #include "IHeartBeat.h"
@@ -19,7 +19,7 @@ class CommandMgr: public std::enable_shared_from_this<CommandMgr>
 {
 public:
 	CommandMgr(	const std::shared_ptr<IExternalCommunication>,
-				const std::shared_ptr<IThruster>,
+				const std::shared_ptr<IThrusterMgr>,
 				const std::shared_ptr<IExternalBoard>,
 				const std::shared_ptr<IBmsMgr>,
 				const std::shared_ptr<IHeartBeat>);
@@ -37,7 +37,7 @@ private:
 
 	/* メンバ変数宣言 */
 	const std::shared_ptr<IExternalCommunication> ex_comm_;
-	const std::shared_ptr<IThruster> thruster_;
+	const std::shared_ptr<IThrusterMgr> thruster_mgr_;
 	const std::shared_ptr<IExternalBoard> ex_board_;
 	const std::shared_ptr<IBmsMgr> bms_mgr_;
 	const std::shared_ptr<IHeartBeat> heart_beat_;

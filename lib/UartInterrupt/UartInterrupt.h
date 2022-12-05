@@ -44,7 +44,7 @@ private:
     };
 
     /* Uartハンドル毎の割込みのコールバックリスト */
-    using RecvInfoList = std::unordered_map<UART_HandleTypeDef*, 
+    using RecvInfoList = std::unordered_map<USART_TypeDef*, 
                                                 RecvInfo>;
 
 
@@ -52,10 +52,6 @@ private:
 
     static std::shared_ptr<UartInterrupt> uart_interrupt_;
     RecvInfoList recv_info_list_;
-
-    //debug
-    CallbackInstance instance_;
-    CallbackFunc     func_;
 
 };
 

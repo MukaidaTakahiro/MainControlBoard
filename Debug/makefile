@@ -10,8 +10,10 @@ RM := rm -rf
 # All of the sources participating in the build are defined here
 -include sources.mk
 -include lib/UartInterrupt/subdir.mk
+-include lib/ThrusterMgr/subdir.mk
 -include lib/Thruster/subdir.mk
 -include lib/TaskBase/subdir.mk
+-include lib/ResetIc/subdir.mk
 -include lib/InternalCommunication/subdir.mk
 -include lib/InUartCommunication/subdir.mk
 -include lib/HeartBeat/subdir.mk

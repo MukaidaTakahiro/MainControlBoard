@@ -8,7 +8,7 @@
 class IThruster
 {
 public:
-    virtual bool OperateThruster(std::vector<int16_t>) = 0;
+    virtual bool SetDuty(uint32_t) = 0;
 };
 
 
