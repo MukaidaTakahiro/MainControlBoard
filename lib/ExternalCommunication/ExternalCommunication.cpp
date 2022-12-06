@@ -26,7 +26,7 @@ constexpr uint8_t ExternalCommunication::kPacketHeader2;
  */
 ExternalCommunication::ExternalCommunication(
         std::shared_ptr<IUartCommunication> uart_comm)
-:   TaskBase("Excomm", 3, 512),
+:   TaskBase("Excomm", 3, 256),
     uart_comm_(uart_comm), 
     callback_instance_(nullptr),
     notify_recv_cmd_(nullptr), 
@@ -111,7 +111,7 @@ void ExternalCommunication::PerformTask()
 
         switch (result)
         {
-        case PacketParsingResult::kPasing:
+        case PacketParsingResult::kParsing:
             break;
         case PacketParsingResult::kReceived:
             packet_length = static_cast<uint16_t>(parse_buffer[kIndexLength]);
@@ -185,15 +185,14 @@ bool ExternalCommunication::SendCmdPacket(const std::vector<uint8_t> cmd)
 ExternalCommunication::PacketParsingResult 
 ExternalCommunication::ParseSyntax(const std::vector<uint8_t> parse_array)
 {
-	uint16_t length = parse_array.size();
 	// debug
-	uint8_t debug_array[256] = {0};
+	uint8_t debug_array[64] = {0};
 	std::copy(parse_array.begin(), parse_array.end(), debug_array);
 
     /* Header1 */
     if (parse_array.size() <= kIndexHeader1)
     {
-        return PacketParsingResult::kPasing;
+        return PacketParsingResult::kParsing;
     }
 
     if (parse_array[kIndexHeader1] != kPacketHeader1)
@@ -204,7 +203,7 @@ ExternalCommunication::ParseSyntax(const std::vector<uint8_t> parse_array)
     /* Header2 */
     if (parse_array.size() <= kIndexHeader2)
     {
-        return PacketParsingResult::kPasing;
+        return PacketParsingResult::kParsing;
     }
 
     if (parse_array[kIndexHeader2] != kPacketHeader2)
@@ -215,7 +214,7 @@ ExternalCommunication::ParseSyntax(const std::vector<uint8_t> parse_array)
     /* Length */
     if (parse_array.size() <= kIndexLength)
     {
-        return PacketParsingResult::kPasing;
+        return PacketParsingResult::kParsing;
     }
 
     uint16_t packet_length = static_cast<uint16_t>(parse_array[kIndexLength]);
@@ -228,7 +227,7 @@ ExternalCommunication::ParseSyntax(const std::vector<uint8_t> parse_array)
     /* Cmd */
     if (parse_array.size() < packet_length)
     {
-        return PacketParsingResult::kPasing;
+        return PacketParsingResult::kParsing;
     }
 
     /* Checksum */

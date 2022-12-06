@@ -27,6 +27,7 @@ InUartCommunication::InUartCommunication(
 {
     /* mutexの作成 */
     recv_buffer_mutex_ = xSemaphoreCreateMutex();
+    task_queue_ = xQueueCreate(256, sizeof(uint8_t));
 }
 
 InUartCommunication::~InUartCommunication()
@@ -40,7 +41,8 @@ InUartCommunication::~InUartCommunication()
  */
 void InUartCommunication::Init()
 {
-    uart_interrupt_->RegistReceiveQueue(uart_handle_, &task_queue_);
+    uart_interrupt_->RegistNotificationTask(uart_handle_, &(this->handle_));
+    CreateTask();
 }
 
 /**
@@ -67,7 +69,7 @@ void InUartCommunication::ClearBuffer()
 {
     std::queue<uint8_t> empty;
     xSemaphoreTake(recv_buffer_mutex_, portMAX_DELAY);
-    recv_buffer_.swap( empty );
+    recv_buffer_.swap(empty);
     xSemaphoreGive(recv_buffer_mutex_);
 }
 
@@ -94,7 +96,12 @@ uint8_t InUartCommunication::ReadByte()
 
 bool InUartCommunication::WaitReceiveData(const TickType_t timeout)
 {
-    if(read_buffer_task_ == nullptr)
+    if (!IsUartEmpty())
+    {
+        return true;
+    }
+
+    if(read_buffer_task_ != nullptr)
     {
         return false;
     }
@@ -116,6 +123,11 @@ bool InUartCommunication::WaitReceiveData(const TickType_t timeout)
 bool InUartCommunication::SendMsg(std::vector<uint8_t> msg)
 {
     HAL_StatusTypeDef result;   /* 送信結果 */
+    //debug
+    uint8_t debug_msg[256] = {0};
+
+    std::copy(msg.begin(), msg.end(), debug_msg);
+
 
     result = HAL_UART_Transmit(uart_handle_, msg.data(), msg.size(), 
                                 HAL_MAX_DELAY);
@@ -124,56 +136,25 @@ bool InUartCommunication::SendMsg(std::vector<uint8_t> msg)
 
 /* private関数 ****************************************************************/
 
-/**
- * @brief Uart割込みコールバック関数
- * 
- * @param instance 
- */
-void InUartCommunication::HandleUartCallback(
-                                    UartInterrupt::CallbackInstance instance)
-{
-    std::static_pointer_cast<InUartCommunication>(instance)
-                                                        ->NotifyUartInterrupt();
-}
-
-/**
- * @brief 受信タスクに割込み発生を通知
- * 
- */
-void InUartCommunication::NotifyUartInterrupt()
-{
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-
-    vTaskNotifyGiveFromISR(recv_task_, &xHigherPriorityTaskWoken);
-    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-}
-
 void InUartCommunication::PerformTask()
 {
-    recv_task_ = xTaskGetCurrentTaskHandle();
     while (1)
     {
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-
-        /* 受信処理 */
+        uint32_t recv_data;
+        xTaskNotifyWait(0x00000000, 0xFFFFFFFF, &recv_data, portMAX_DELAY);
+        xSemaphoreTake(recv_buffer_mutex_, portMAX_DELAY);
+        recv_buffer_.push(static_cast<uint8_t>(recv_data & 0x000000FF));
+        xSemaphoreGive(recv_buffer_mutex_);
         StoreUartData();
     }
 }
 
 void InUartCommunication::StoreUartData()
 {
-    /* データ取得 */
-    xSemaphoreTake(recv_buffer_mutex_, portMAX_DELAY);
-    recv_buffer_.push(recv_data_);
-    xSemaphoreGive(recv_buffer_mutex_);
-
     /* 受信通知 */
     if (read_buffer_task_ != nullptr)
     {
         xTaskNotifyGive(read_buffer_task_);
     }
-
-    /* 割込み待ち設定 */
-    HAL_UART_Receive_IT(uart_handle_, &recv_data_, 1);
     return;
 }

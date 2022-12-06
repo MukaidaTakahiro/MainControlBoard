@@ -59,7 +59,7 @@ private:
     
     enum class PacketParsingResult
     {
-        kPasing,
+        kParsing,
         kReceived,
         kMismatch,
         kSyntaxErr,
@@ -93,8 +93,6 @@ private:
     std::vector<uint8_t> cmd_msg_;    /* cmdメッセージ               */
 
     /* メンバ関数宣言 */
-
-    static void CallbackTaskFunc(std::shared_ptr<void>);
     virtual void PerformTask();
     PacketParsingResult ParseSyntax(const std::vector<uint8_t>);
     uint8_t AddChecksum(const uint8_t, const uint8_t);

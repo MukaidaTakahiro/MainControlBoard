@@ -31,28 +31,25 @@ public:
     
     static std::shared_ptr<UartInterrupt> GetInstance();
     
-    bool RegistReceiveQueue(UART_HandleTypeDef*, QueueHandle_t*);
+    bool RegistNotificationTask(UART_HandleTypeDef*, TaskHandle_t*);
     bool Init();
     bool ExcuteRxCpltCallback(UART_HandleTypeDef*);
     
 private:
-
+    static constexpr uint16_t kUartMaxNum = 6;
     struct RecvInfo
     {
+        UART_HandleTypeDef* huart;
         uint8_t recv_data;
-        QueueHandle_t* recv_queue;
+        TaskHandle_t* notification_task;
     };
 
-    /* Uartハンドル毎の割込みのコールバックリスト */
-    using RecvInfoList = std::unordered_map<USART_TypeDef*, 
-                                                RecvInfo>;
-
-
-    UartInterrupt();
-
     static std::shared_ptr<UartInterrupt> uart_interrupt_;
-    RecvInfoList recv_info_list_;
-
+    RecvInfo recv_info_list_[kUartMaxNum];
+    uint16_t regist_num_;
+    
+    
+    UartInterrupt();
 };
 
 

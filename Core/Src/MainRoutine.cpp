@@ -5,7 +5,7 @@ void DebugLedBlue(uint16_t);
 void DebugLedRB(uint16_t);
 
 MainRoutine::MainRoutine()
-:	TaskBase("MainRoutine", 1, 128)
+:	TaskBase("MainRoutine", 1, 256)
 {
 }
 
@@ -21,15 +21,14 @@ void MainRoutine::Init()
     ex_uart_comm_ = std::make_shared<ExUartCommunication>(uart_interrupt_, &huart1);
     ex_uart_comm_->Init();
 
+    prb_uart_comm_ = std::make_shared<InUartCommunication>(uart_interrupt_, &huart3);
+    prb_uart_comm_->Init();
+
 
     ex_comm_ = std::make_shared<ExternalCommunication>(ex_uart_comm_);
     ex_comm_->Init();
 
-
-    in_uart_comm_ = std::make_shared<InUartCommunication>(uart_interrupt_, &huart3);
-    in_uart_comm_->Init();
-
-    in_comm_ = std::make_shared<InternalCommunication>(in_uart_comm_);
+    in_comm_ = std::make_shared<InternalCommunication>(prb_uart_comm_);
 
     ex_board_ = std::make_shared<ExternalBoard>(nullptr, in_comm_, nullptr);
 
@@ -74,6 +73,7 @@ void MainRoutine::PrbCommTest()
         std::vector<uint8_t> ex_msg;
         std::vector<uint8_t> in_msg;
 
+        DebugLedBlue(100);
 
         switch (state)
         {
@@ -85,37 +85,35 @@ void MainRoutine::PrbCommTest()
                 {
                     ex_msg.push_back(ex_uart_comm_->ReadByte());
                 }
-                if (ex_msg.size() > 0) break;            
+                if (ex_msg.size() >= 7) break;
                 
                 ex_uart_comm_->WaitReceiveData(portMAX_DELAY);
             }
 
-            //in_uart_comm_->SendMsg(ex_msg);
-            ex_uart_comm_->SendMsg(ex_msg);
+            prb_uart_comm_->SendMsg(ex_msg);
             state = 1;
 
             break;
         
         case 1:
-            /*/
-            if (in_uart_comm_->WaitReceiveData(pdMS_TO_TICKS(3000)))
+
+            if (prb_uart_comm_->WaitReceiveData(pdMS_TO_TICKS(1000)))
             {
-                while (!in_uart_comm_->IsUartEmpty())
+                while (!prb_uart_comm_->IsUartEmpty())
                 {
-                    in_msg.push_back(in_uart_comm_->ReadByte());
+                    in_msg.push_back(prb_uart_comm_->ReadByte());
                 }
             }
             else
             {
                 in_msg.push_back(0xCC);
             }
-            */
+            
             ex_uart_comm_->SendMsg(in_msg);
 
             state = 0;
 
             break;
-            
             
 
         default:

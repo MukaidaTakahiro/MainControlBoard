@@ -25,7 +25,7 @@ InternalCommunication::InternalCommunication(
 :   uart_comm_(uart_comm)
 {
     receive_timer_ = xTimerCreate(  "InCmdReceiveTimer",
-                                    kReceiveTimeout,
+                                    pdMS_TO_TICKS(kReceiveTimeout),
                                     pdFALSE,
                                     this,
                                     TimeoutCallbackEntry);
@@ -74,6 +74,7 @@ bool InternalCommunication::ReceiveResponse(
 {
     std::vector<uint8_t> recv_buffer;
 
+    IsReceiveTimeout = false;
     xTimerStart(receive_timer_, 0);
 
     while (1)
@@ -129,17 +130,16 @@ bool InternalCommunication::ReceiveResponse(
 std::vector<uint8_t> InternalCommunication::MakePacket(
                                             const std::vector<uint8_t> cmd_msg)
 {
-    std::vector<uint8_t> packet;
+	uint16_t packet_size = cmd_msg.size() + kMinPacketSize - 1;
+	std::vector<uint8_t> packet;
 
+	packet.reserve(packet_size);
     packet.push_back(kPacketHeader1);
     packet.push_back(kPacketHeader2);
     
-    
-    uint16_t packet_size;
-    packet_size = cmd_msg.size() + kMinPacketSize - 1;
     packet.push_back(static_cast<uint8_t>(packet_size & 0xFF));
 
-    std::copy(cmd_msg.begin(), cmd_msg.end(), packet.end());
+    packet.insert(packet.end(), cmd_msg.begin(), cmd_msg.end());
 
     uint8_t checksum = CalcChecksum(packet);
     packet.push_back(checksum);

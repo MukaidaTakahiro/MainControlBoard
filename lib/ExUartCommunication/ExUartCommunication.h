@@ -68,8 +68,7 @@ private:
     std::queue<uint8_t> recv_buffer_;           /* 受信データ用キュー */
     SemaphoreHandle_t recv_buffer_mutex_;       /* 受信データ用mutex  */
 
-    TaskHandle_t recv_task_;
-    TaskHandle_t recv_buffer_task_;
+    volatile TaskHandle_t recv_buffer_task_;
     QueueHandle_t task_que_;
 
     std::shared_ptr<void> uart_callback_instance_; /* UART呼び出し時のコールバックインスタンス */
@@ -79,7 +78,7 @@ private:
 
     
     /* メンバ関数 */
-    virtual void PerformTask();
+    void PerformTask();
     void StoreUartData();
     static void CallbackTaskFunc(std::shared_ptr<void>);
     static void HandleUartCallback(UartInterrupt::CallbackInstance);
