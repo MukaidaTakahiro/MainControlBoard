@@ -34,7 +34,7 @@ public:
 
     virtual bool SendCmd(   BoardId,
                             const std::vector<uint8_t>, 
-                            const std::unique_ptr<std::vector<uint8_t>>);
+                            std::vector<uint8_t>*);
 
 private:
 

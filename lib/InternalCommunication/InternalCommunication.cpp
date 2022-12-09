@@ -10,6 +10,9 @@
  */
 
 #include "InternalCommunication.h"
+// debug
+#include "stm32f4xx_hal.h"
+#include "main.h"
 
 constexpr uint32_t InternalCommunication::kCommTimeout;
 constexpr uint16_t InternalCommunication::kReceiveTimeout;
@@ -24,11 +27,6 @@ InternalCommunication::InternalCommunication(
                         std::shared_ptr<IUartCommunication> uart_comm)
 :   uart_comm_(uart_comm)
 {
-    receive_timer_ = xTimerCreate(  "InCmdReceiveTimer",
-                                    pdMS_TO_TICKS(kReceiveTimeout),
-                                    pdFALSE,
-                                    this,
-                                    TimeoutCallbackEntry);
 }
 
 InternalCommunication::~InternalCommunication()
@@ -44,7 +42,7 @@ InternalCommunication::~InternalCommunication()
  */
 bool InternalCommunication::SendInCmdPacket(
                         const std::vector<uint8_t> send_cmd,
-                        std::unique_ptr<std::vector<uint8_t>> response)
+                        std::vector<uint8_t>* response)
 {
     auto send_packet = MakePacket(send_cmd);
 
@@ -53,13 +51,16 @@ bool InternalCommunication::SendInCmdPacket(
     {
         return false;
     }
+    HAL_GPIO_WritePin(Debug1_GPIO_Port, Debug1_Pin, GPIO_PIN_SET);
 
     /* 受信待ち */
     /* レスポンスタイムアウトセット */
-    if (!ReceiveResponse(std::move(response)))
+    if (!ReceiveResponse(response))
     {
         return false;
     }
+    
+    HAL_GPIO_WritePin(Debug1_GPIO_Port, Debug1_Pin, GPIO_PIN_RESET);
 
     return true;
 }
@@ -70,15 +71,30 @@ bool InternalCommunication::SendInCmdPacket(
  * @return bool 
  */
 bool InternalCommunication::ReceiveResponse(
-        const std::unique_ptr<std::vector<uint8_t>> response)
+        std::vector<uint8_t>* response)
 {
     std::vector<uint8_t> recv_buffer;
-
-    IsReceiveTimeout = false;
-    xTimerStart(receive_timer_, 0);
+    const auto start_time = xTaskGetTickCount();
+    const auto tick_comm_timeout = pdMS_TO_TICKS(kCommTimeout);
 
     while (1)
     {
+        auto elapsed_time = (UINT32_MAX +  xTaskGetTickCount() - start_time) 
+                                                                % UINT32_MAX;
+
+        if (tick_comm_timeout <= elapsed_time)
+        {
+            return false;
+        }
+
+        auto timeout = tick_comm_timeout - elapsed_time;
+
+        /* タイムアウト */
+        if (!uart_comm_->WaitReceiveData(timeout))
+        {
+            return false;
+        }
+
         while (!uart_comm_->IsUartEmpty())
         {
             recv_buffer.push_back(uart_comm_->ReadByte());
@@ -90,6 +106,11 @@ bool InternalCommunication::ReceiveResponse(
             
             /* 解析 */
             result = ParsePacket(recv_buffer);
+/*
+            uint16_t size = recv_buffer.size();
+            uint8_t debug_array[size] = {0};
+            std::copy(recv_buffer.begin(), recv_buffer.end(), debug_array);
+*/
 
             /* 解析結果処理 */
             switch (result)
@@ -102,27 +123,20 @@ bool InternalCommunication::ReceiveResponse(
                 break;
             
             case ParsingResult::kComplete:
-                xTimerStop(receive_timer_, 0);
-
                 uint16_t packet_length = recv_buffer[kLengthIndex];
-                std::copy(  recv_buffer.begin() + 3,
-                            recv_buffer.begin() + packet_length - 1,
-                            response->begin());
+                response->insert(   response->begin(), 
+                                    recv_buffer.begin() + 3, 
+                                    recv_buffer.begin() + packet_length - 1);
+//                std::copy(  recv_buffer.begin() + 3,
+//                            recv_buffer.begin() + packet_length - 1,
+//                            (*response).begin());
+
+                uint16_t size = response->size();
+                uint8_t debug_buff[size] = {0};
+                std::copy(response->begin(), response->end(), debug_buff);
 
                 return true;
-
             }
-        }
-
-        /* タイムアウト */
-        if (IsReceiveTimeout)
-        {
-            return false;
-        }
-        
-        if (uart_comm_->IsUartEmpty())
-        {
-            uart_comm_->WaitReceiveData(kCommTimeout);
         }
     }
 }
@@ -180,7 +194,6 @@ InternalCommunication::ParsingResult InternalCommunication::ParsePacket(
 
 
     /* パケット長 チェック */
-
     if (parse_packet.size() <= kLengthIndex)
     {
         return ParsingResult::kParsing;
@@ -193,34 +206,22 @@ InternalCommunication::ParsingResult InternalCommunication::ParsePacket(
         return ParsingResult::kMismatch;
     }
 
-    if (packet_length <= parse_packet.size())
+    uint16_t size = parse_packet.size();
+    if (parse_packet.size() < packet_length)
     {
         return ParsingResult::kParsing;
     }
 
     
     std::vector<uint8_t> calc_packet;
-    std::copy(parse_packet.begin(), parse_packet.end() - 1, 
-                calc_packet.begin());
+    uint8_t checksum = CalcChecksum({parse_packet.begin(), parse_packet.end() - 1});
 
-    if (parse_packet[packet_length - 1] != CalcChecksum(calc_packet))
+    if (parse_packet[packet_length - 1] != checksum)
     {
         return ParsingResult::kMismatch;
     }
     
     return ParsingResult::kComplete;
-}
-
-
-void InternalCommunication::TimeoutCallbackEntry(TimerHandle_t xTimer)
-{
-    auto instance = reinterpret_cast<InternalCommunication*>(pvTimerGetTimerID(xTimer));
-    instance->HandleTimeout();
-}
-
-void InternalCommunication::HandleTimeout()
-{
-    IsReceiveTimeout = true;
 }
 
 

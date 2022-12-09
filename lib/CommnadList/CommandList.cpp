@@ -36,13 +36,14 @@ bool CmdSetBobPower::ExcuteCmd(std::vector<uint8_t> cmd_arg)
     auto response = std::make_unique<std::vector<uint8_t>>();
     
     /* コマンド送信 */
-    if(!ex_board_->SendCmd(BoardId::kBob, cmd_arg, std::move(response)))
+    if(!ex_board_->SendCmd(BoardId::kBob, cmd_arg, response.get()))
     {
         return false;
     }
 
     /* 受信処理 */
-    response_ = *response;
+    response_.clear();
+    response_.insert(response_.begin(), response->begin(), response->end());
     
     return false;
 }
@@ -67,13 +68,18 @@ bool CmdSetPrbPower::ExcuteCmd(std::vector<uint8_t> cmd_arg)
     auto response = std::make_unique<std::vector<uint8_t>>();
     
     /* コマンド送信 */
-    if(!ex_board_->SendCmd(BoardId::kPrb, cmd_arg, std::move(response)))
+    if(!ex_board_->SendCmd(BoardId::kPrb, cmd_arg, response.get()))
     {
         return false;
     }
 
+    //uint16_t size = response->size();
+    //uint8_t debug_array[size] = {0};
+    //std::copy((*response).begin(), (*response).end(), debug_array);
+
     /* 受信処理 */
-    response_ = *response;
+    response_.clear();
+    response_.insert(response_.begin(), response->begin(), response->end());
     
     return true;
 }
@@ -123,7 +129,7 @@ bool CmdControl::ExcuteCmd(const std::vector<uint8_t> cmd_msg)
     uint8_t cmd_value = cmd_msg.front();
     std::vector<uint8_t> send_cmd(cmd_value) ;
     auto response = std::make_unique<std::vector<uint8_t>>();
-    if (!ex_board_->SendCmd(BoardId::kBob, send_cmd, std::move(response)))
+    if (!ex_board_->SendCmd(BoardId::kBob, send_cmd, response.get()))
     {
         return false;
     }

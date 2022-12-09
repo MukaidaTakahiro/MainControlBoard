@@ -42,7 +42,7 @@ public:
     virtual uint8_t ReadByte();
     virtual bool IsUartEmpty();
     virtual void ClearBuffer();
-    virtual bool WaitReceiveData(TickType_t);
+    virtual bool WaitReceiveData(const TickType_t);
 
     /* 送信関連 */
     virtual bool SendMsg(std::vector<uint8_t>);
@@ -50,17 +50,16 @@ public:
 private:
     /* 定数宣言 */
     static constexpr uint16_t kRecvDataSize = 256;
-    static constexpr uint16_t kUartTimeOut = 1000;
 
     /* メンバ変数 */
     std::shared_ptr<UartInterrupt> uart_interrupt_; /* Uart割込みインスタンス */
-    UART_HandleTypeDef* const uart_handle_; /* UART通信ハンドル               */
-    uint8_t recv_data_;                /* UART割込みのデータ格納先       */
+    UART_HandleTypeDef* uart_handle_;         /* UART通信ハンドル       */
+    uint8_t recv_data_;                     /* UART割込みのデータ格納先       */
     std::queue<uint8_t> recv_buffer_;       /* 受信バッファ                   */
     SemaphoreHandle_t recv_buffer_mutex_;   /* 受信バッファ処理のmutex        */
     TaskHandle_t recv_task_;                /* 受信タスクハンドル             */
     TaskHandle_t read_buffer_task_;         /* データ読み込みタスクハンドル   */
-    QueueHandle_t task_queue_;
+    StreamBufferHandle_t task_buffer_;
 
 
     /* メンバ関数 */

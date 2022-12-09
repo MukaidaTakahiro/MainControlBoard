@@ -58,7 +58,6 @@ void USART3_IRQHandler(void);
 void TIM8_TRG_COM_TIM14_IRQHandler(void);
 void UART4_IRQHandler(void);
 void UART5_IRQHandler(void);
-void USART6_IRQHandler(void);
 /* USER CODE BEGIN EFP */
 
 /* USER CODE END EFP */

@@ -11,7 +11,7 @@ public:
     enum class BoardId;
     virtual bool SendCmd(   BoardId,
                             const std::vector<uint8_t>, 
-                            const std::unique_ptr<std::vector<uint8_t>>) = 0;
+                            std::vector<uint8_t>*) = 0;
 
 };
 

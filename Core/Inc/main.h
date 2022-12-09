@@ -65,6 +65,10 @@ void Error_Handler(void);
 #define DIPSW1_2_GPIO_Port GPIOA
 #define DIPSW1_1_Pin GPIO_PIN_5
 #define DIPSW1_1_GPIO_Port GPIOA
+#define Debug1_Pin GPIO_PIN_6
+#define Debug1_GPIO_Port GPIOC
+#define Debug2_Pin GPIO_PIN_7
+#define Debug2_GPIO_Port GPIOC
 #define LED4_Pin GPIO_PIN_11
 #define LED4_GPIO_Port GPIOA
 #define LED3_Pin GPIO_PIN_12

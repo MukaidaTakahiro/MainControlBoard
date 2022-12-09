@@ -18,7 +18,7 @@ ExUartCommunication::ExUartCommunication(
     
 {
     recv_buffer_mutex_ = xSemaphoreCreateMutex();
-    task_que_ = xQueueCreate(256, sizeof(uint8_t));
+    task_buffer_ = xStreamBufferCreate(256, 1);
 }
 
 
@@ -33,8 +33,7 @@ ExUartCommunication::~ExUartCommunication()
 void ExUartCommunication::Init()
 {
     /* Uart割込みコールバック関数登録 */
-    uart_interrupt_->RegistNotificationTask(uart_handle_,
-                                            &(this->handle_));
+    uart_interrupt_->RegistHandle(uart_handle_);
 
     CreateTask();
 }
@@ -45,7 +44,7 @@ void ExUartCommunication::Init()
  * @param timeout 待機時間
  * @return bool true:データ取得, false:タイムアウト
  */
-bool ExUartCommunication::WaitReceiveData(TickType_t timeout)
+bool ExUartCommunication::WaitReceiveData(const TickType_t timeout)
 {
     if (!IsUartEmpty())
     {
@@ -59,10 +58,10 @@ bool ExUartCommunication::WaitReceiveData(TickType_t timeout)
 
     
     recv_buffer_task_ = xTaskGetCurrentTaskHandle();
-    ulTaskNotifyTake(pdTRUE, timeout);
+    uint32_t result = ulTaskNotifyTake(pdTRUE, timeout);
     recv_buffer_task_ = nullptr;
 
-    return true;
+    return (result > 0);
     
 }
 
@@ -84,6 +83,10 @@ uint8_t ExUartCommunication::ReadByte()
     return read_char;
 }
 
+/**
+ * @brief バッファをクリアする
+ * 
+ */
 void ExUartCommunication::ClearBuffer()
 {
     xSemaphoreTake(recv_buffer_mutex_, portMAX_DELAY);
@@ -103,10 +106,17 @@ bool ExUartCommunication::SendMsg(std::vector<uint8_t> msg)
     HAL_StatusTypeDef result;   /* 送信結果 */
 
     result = HAL_UART_Transmit(uart_handle_, msg.data(), msg.size(), 
-                                portMAX_DELAY);
+                                HAL_MAX_DELAY);
     return (result == HAL_OK);
 }
 
+/**
+ * @brief データ受信を通知するコールバック
+ * 
+ * @param instance 
+ * @param func 
+ * @return bool 
+ */
 bool ExUartCommunication::RegistNotifyHeartBeatCallback(
                                                 std::shared_ptr<void> instance,
                                                 NotifyHeartBeatCallback func)
@@ -162,13 +172,12 @@ void ExUartCommunication::PerformTask()
 {
     while (1)
     {
-        uint32_t recv_data;
-        xTaskNotifyWait(0x000000000, 0xFFFFFFFF, &recv_data, portMAX_DELAY);
-        HAL_GPIO_WritePin(LED3_GPIO_Port, LED3_Pin, GPIO_PIN_SET);
+        uint8_t recv_data;
+        
+        recv_data = uart_interrupt_->GetRecvData(uart_handle_);
         xSemaphoreTake(recv_buffer_mutex_, portMAX_DELAY);
-        recv_buffer_.push(static_cast<uint8_t>(recv_data & 0x000000FF));
+        recv_buffer_.push(recv_data);
         xSemaphoreGive(recv_buffer_mutex_);
         StoreUartData();
-        HAL_GPIO_WritePin(LED3_GPIO_Port, LED3_Pin, GPIO_PIN_RESET);
     }
 }

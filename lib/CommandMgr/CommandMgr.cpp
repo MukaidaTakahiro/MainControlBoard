@@ -104,9 +104,8 @@ bool CommandMgr::ParseCmd(const std::vector<uint8_t> cmd_msg)
         return false;
     }
 
-    /* 応答コマンド送信 */
     
-    res_msg.insert(res_msg.begin(), cmd_value + 1);
+    /* 応答コマンド送信 */
     ex_comm_->SendCmdPacket(res_msg);
     
     return true;

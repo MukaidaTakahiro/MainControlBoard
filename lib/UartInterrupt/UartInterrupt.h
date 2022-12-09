@@ -20,6 +20,7 @@
 #include "FreeRTOS.h"
 #include "queue.h"
 #include "usart.h"
+#include "stream_buffer.h"
 #include "stm32f4xx_hal.h"
 
 class UartInterrupt
@@ -31,7 +32,8 @@ public:
     
     static std::shared_ptr<UartInterrupt> GetInstance();
     
-    bool RegistNotificationTask(UART_HandleTypeDef*, TaskHandle_t*);
+    bool RegistHandle(UART_HandleTypeDef*);
+    uint8_t GetRecvData(UART_HandleTypeDef*);
     bool Init();
     bool ExcuteRxCpltCallback(UART_HandleTypeDef*);
     
@@ -41,7 +43,7 @@ private:
     {
         UART_HandleTypeDef* huart;
         uint8_t recv_data;
-        TaskHandle_t* notification_task;
+        StreamBufferHandle_t buffer_handle;
     };
 
     static std::shared_ptr<UartInterrupt> uart_interrupt_;

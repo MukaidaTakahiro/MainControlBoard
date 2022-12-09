@@ -11,7 +11,6 @@
 
 #include "IInternalCommunication.h"
 #include "IUartCommunication.h"
-#include "TaskBase.h"
 
 class InternalCommunication
 :   public IInternalCommunication
@@ -23,11 +22,11 @@ public:
     ~InternalCommunication();
 
     virtual bool SendInCmdPacket(   const std::vector<uint8_t>,
-                                    const std::unique_ptr<std::vector<uint8_t>>);
+                                    std::vector<uint8_t>*);
 
 private:
 
-    static constexpr uint32_t kCommTimeout    = 500;
+    static constexpr uint32_t kCommTimeout    = 3000;
     static constexpr uint16_t kReceiveTimeout = 1000;
     static constexpr uint16_t kMinPacketSize  = 5;
     static constexpr uint8_t  kPacketHeader1  = 0xFF; /* header-1 */
@@ -53,21 +52,17 @@ private:
         kMismatch
     };
     
-    TimerHandle_t receive_timer_;
 
     /* 変数宣言 */
     std::shared_ptr<IUartCommunication> uart_comm_;
-    bool IsReceiveTimeout;
 
 
     /* 関数宣言 */
     ParsingResult ParsePacket(const std::vector<uint8_t>);
     std::vector<uint8_t> GetPacket();
-    static void TimeoutCallbackEntry(TimerHandle_t);
-    void HandleTimeout();
     std::vector<uint8_t> MakePacket(const std::vector<uint8_t>);
     uint8_t AddCheckSum(const uint8_t, const uint8_t);
-    bool ReceiveResponse(const std::unique_ptr<std::vector<uint8_t>>);
+    bool ReceiveResponse(std::vector<uint8_t>*);
     uint8_t CalcChecksum(const std::vector<uint8_t>);
 
 };

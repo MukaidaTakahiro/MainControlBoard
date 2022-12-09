@@ -26,7 +26,7 @@ constexpr uint8_t ExternalCommunication::kPacketHeader2;
  */
 ExternalCommunication::ExternalCommunication(
         std::shared_ptr<IUartCommunication> uart_comm)
-:   TaskBase("Excomm", 3, 256),
+:   TaskBase("Excomm", 3, 512),
     uart_comm_(uart_comm), 
     callback_instance_(nullptr),
     notify_recv_cmd_(nullptr), 
@@ -185,9 +185,6 @@ bool ExternalCommunication::SendCmdPacket(const std::vector<uint8_t> cmd)
 ExternalCommunication::PacketParsingResult 
 ExternalCommunication::ParseSyntax(const std::vector<uint8_t> parse_array)
 {
-	// debug
-	uint8_t debug_array[64] = {0};
-	std::copy(parse_array.begin(), parse_array.end(), debug_array);
 
     /* Header1 */
     if (parse_array.size() <= kIndexHeader1)

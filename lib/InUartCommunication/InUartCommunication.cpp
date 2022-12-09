@@ -23,11 +23,12 @@ InUartCommunication::InUartCommunication(
                         UART_HandleTypeDef* const uart_handle)
 :   TaskBase("InUartComm", 4, 256),
     uart_interrupt_(uart_interrupt), 
-    uart_handle_(uart_handle)
+    uart_handle_(uart_handle),
+    read_buffer_task_(nullptr)
 {
     /* mutexの作成 */
     recv_buffer_mutex_ = xSemaphoreCreateMutex();
-    task_queue_ = xQueueCreate(256, sizeof(uint8_t));
+    task_buffer_ = xStreamBufferCreate(256, 1);
 }
 
 InUartCommunication::~InUartCommunication()
@@ -41,7 +42,7 @@ InUartCommunication::~InUartCommunication()
  */
 void InUartCommunication::Init()
 {
-    uart_interrupt_->RegistNotificationTask(uart_handle_, &(this->handle_));
+    uart_interrupt_->RegistHandle(uart_handle_);
     CreateTask();
 }
 
@@ -83,6 +84,7 @@ uint8_t InUartCommunication::ReadByte()
 {
     uint8_t read_data = 0x00;
 
+    HAL_GPIO_WritePin(LED3_GPIO_Port, LED3_Pin, GPIO_PIN_SET);
     if (!IsUartEmpty())
     {
         xSemaphoreTake(recv_buffer_mutex_, portMAX_DELAY);
@@ -91,6 +93,7 @@ uint8_t InUartCommunication::ReadByte()
         xSemaphoreGive(recv_buffer_mutex_);
     }
 
+    HAL_GPIO_WritePin(LED3_GPIO_Port, LED3_Pin, GPIO_PIN_RESET);
     return read_data;
 }
 
@@ -112,22 +115,12 @@ bool InUartCommunication::WaitReceiveData(const TickType_t timeout)
     ulNotificationValue = ulTaskNotifyTake(pdTRUE, timeout);
     read_buffer_task_ = nullptr;
 
-    if (ulNotificationValue != 1)
-    {
-        return false;
-    }
-
-    return true;
+    return (ulNotificationValue > 0);
 }
 
 bool InUartCommunication::SendMsg(std::vector<uint8_t> msg)
 {
     HAL_StatusTypeDef result;   /* 送信結果 */
-    //debug
-    uint8_t debug_msg[256] = {0};
-
-    std::copy(msg.begin(), msg.end(), debug_msg);
-
 
     result = HAL_UART_Transmit(uart_handle_, msg.data(), msg.size(), 
                                 HAL_MAX_DELAY);
@@ -140,10 +133,10 @@ void InUartCommunication::PerformTask()
 {
     while (1)
     {
-        uint32_t recv_data;
-        xTaskNotifyWait(0x00000000, 0xFFFFFFFF, &recv_data, portMAX_DELAY);
+        uint8_t recv_data;
+        recv_data = uart_interrupt_->GetRecvData(uart_handle_);
         xSemaphoreTake(recv_buffer_mutex_, portMAX_DELAY);
-        recv_buffer_.push(static_cast<uint8_t>(recv_data & 0x000000FF));
+        recv_buffer_.push(recv_data);
         xSemaphoreGive(recv_buffer_mutex_);
         StoreUartData();
     }

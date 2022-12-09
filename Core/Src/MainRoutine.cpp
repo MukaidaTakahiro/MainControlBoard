@@ -18,19 +18,20 @@ void MainRoutine::Init()
 	
 	uart_interrupt_ = UartInterrupt::GetInstance();
     
+    prb_uart_comm_ = std::make_shared<InUartCommunication>(uart_interrupt_, &huart3);
+    prb_uart_comm_->Init();
+
     ex_uart_comm_ = std::make_shared<ExUartCommunication>(uart_interrupt_, &huart1);
     ex_uart_comm_->Init();
 
-    prb_uart_comm_ = std::make_shared<InUartCommunication>(uart_interrupt_, &huart3);
-    prb_uart_comm_->Init();
 
 
     ex_comm_ = std::make_shared<ExternalCommunication>(ex_uart_comm_);
     ex_comm_->Init();
 
-    in_comm_ = std::make_shared<InternalCommunication>(prb_uart_comm_);
+    prb_comm_ = std::make_shared<InternalCommunication>(prb_uart_comm_);
 
-    ex_board_ = std::make_shared<ExternalBoard>(nullptr, in_comm_, nullptr);
+    ex_board_ = std::make_shared<ExternalBoard>(nullptr, prb_comm_, nullptr);
 
     cmd_mgr_ = std::make_shared<CommandMgr>(ex_comm_, 
                                             nullptr, 

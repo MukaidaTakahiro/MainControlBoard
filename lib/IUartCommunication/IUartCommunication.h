@@ -16,7 +16,7 @@ public:
     virtual void Init() = 0;
 
     /* 受信関連 */
-    virtual bool WaitReceiveData(TickType_t) = 0;
+    virtual bool WaitReceiveData(const TickType_t) = 0;
     virtual uint8_t ReadByte() = 0;
     virtual bool IsUartEmpty() = 0;
     virtual void ClearBuffer() = 0;

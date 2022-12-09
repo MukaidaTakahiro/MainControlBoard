@@ -42,7 +42,7 @@ public:
     void Init();
 
     /* 受信関連 */
-    virtual bool WaitReceiveData(TickType_t);
+    virtual bool WaitReceiveData(const TickType_t);
     virtual uint8_t ReadByte();
     virtual bool IsUartEmpty();
     virtual void ClearBuffer();
@@ -69,7 +69,7 @@ private:
     SemaphoreHandle_t recv_buffer_mutex_;       /* 受信データ用mutex  */
 
     volatile TaskHandle_t recv_buffer_task_;
-    QueueHandle_t task_que_;
+    StreamBufferHandle_t task_buffer_;
 
     std::shared_ptr<void> uart_callback_instance_; /* UART呼び出し時のコールバックインスタンス */
     NotifyHeartBeatCallback uart_callback_func_;     /* UART呼び出し時のコールバック関数 */

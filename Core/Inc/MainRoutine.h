@@ -38,8 +38,12 @@ public:
     std::shared_ptr<HeartBeat> heart_beat_;
 
 
+    std::shared_ptr<InUartCommunication> bob_uart_comm_;
     std::shared_ptr<InUartCommunication> prb_uart_comm_;
-    std::shared_ptr<InternalCommunication> in_comm_;
+    std::shared_ptr<InUartCommunication> eob_uart_comm_;
+    std::shared_ptr<InternalCommunication> bob_comm_;
+    std::shared_ptr<InternalCommunication> prb_comm_;
+    std::shared_ptr<InternalCommunication> eob_comm_;
     
 
 private:
