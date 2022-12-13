@@ -23,6 +23,7 @@ RM := rm -rf
 -include lib/CommnadList/subdir.mk
 -include lib/CommandMgr/subdir.mk
 -include lib/CommandBase/subdir.mk
+-include lib/BmsMgr/subdir.mk
 -include lib/Bms/subdir.mk
 -include Drivers/STM32F4xx_HAL_Driver/Src/subdir.mk
 -include Core/Startup/subdir.mk

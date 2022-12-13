@@ -41,6 +41,20 @@
         "stdexcept": "cpp",
         "streambuf": "cpp",
         "typeinfo": "cpp",
-        "queue": "cpp"
+        "queue": "cpp",
+        "any": "cpp",
+        "chrono": "cpp",
+        "condition_variable": "cpp",
+        "cstring": "cpp",
+        "ctime": "cpp",
+        "list": "cpp",
+        "unordered_set": "cpp",
+        "ratio": "cpp",
+        "set": "cpp",
+        "iomanip": "cpp",
+        "iostream": "cpp",
+        "mutex": "cpp",
+        "thread": "cpp",
+        "variant": "cpp"
     }
 }

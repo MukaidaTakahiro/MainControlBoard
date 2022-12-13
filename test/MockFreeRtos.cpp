@@ -42,3 +42,26 @@ TickType_t xTaskGetTickCountFromISR( void )
 {
     return MockFreeRtosObj.xTaskGetTickCountFromISR();
 }
+
+/******************************************************************************/
+/* タスク関連 *****************************************************************/
+/******************************************************************************/
+BaseType_t xTaskCreate( TaskFunction_t pxTaskCode,
+                        const char * const pcName,
+                        const configSTACK_DEPTH_TYPE usStackDepth,
+                        void * const pvParameters,
+                        UBaseType_t uxPriority,
+                        TaskHandle_t * const pxCreatedTask )
+{
+    return MockFreeRtosObj.xTaskCreate( pxTaskCode,
+                                        pcName,
+                                        usStackDepth,
+                                        pvParameters,
+                                        uxPriority,
+                                        pxCreatedTask );
+}
+
+void vTaskDelete( TaskHandle_t xTaskToDelete )
+{
+    return MockFreeRtosObj.vTaskDelete(xTaskToDelete);
+}

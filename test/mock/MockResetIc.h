@@ -9,6 +9,6 @@
 class MockResetIc: public IResetIc
 {
 public:
-    MOCK_METHOD0(ShutdownSystem, bool(void));
+    MOCK_METHOD0(ShutdownSystem, void(void));
 };
 #endif /* MOCK_DEVICE_H_ */

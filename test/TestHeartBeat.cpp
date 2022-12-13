@@ -1,9 +1,9 @@
 ﻿#include "gtest/gtest.h"
 #include <gmock/gmock.h>
 #include <memory>
+#include <MockFreeRtos.h>
 
 #include "HeartBeat.h"
-#include <MockFreeRtos.h>
 #include <MockNotificationUartIrq.h>
 #include <MockResetIc.h>
 
@@ -61,7 +61,7 @@ TEST_F(HeartBeatTestFixture, StartMonitoring_1)
 {
     const TickType_t test_val = 5;
 
-    EXPECT_CALL(*uart_irq_, RegistNotifyHeartBeatCallback(heart_beat_, _))
+    EXPECT_CALL(*uart_irq_, RegistNotifyHeartBeatCallback(_, _))
     .Times(1);
 
     EXPECT_CALL(MockFreeRtosObj, xTaskGetTickCount())
@@ -83,7 +83,7 @@ TEST_F(HeartBeatTestFixture, StartMonitoring_2)
 {
     const TickType_t test_val = 5;
 
-    EXPECT_CALL(*uart_irq_, RegistNotifyHeartBeatCallback(heart_beat_, _))
+    EXPECT_CALL(*uart_irq_, RegistNotifyHeartBeatCallback(_, _))
     .Times(1);
 
     EXPECT_CALL(MockFreeRtosObj, xTaskGetTickCount())
@@ -107,11 +107,9 @@ TEST(HeartBeat, StartMonitoring_3)
     EXPECT_CALL(MockFreeRtosObj,xTimerCreate(_,_,pdFALSE,_,_))
     .Times(1);
 
-    
-    HeartBeat heart_beat_(nullptr, &device);
-    auto heart_beat_ = std::make_shared<HeartBeat>(nullptr, )
+    auto heart_beat_ = std::make_shared<HeartBeat>(nullptr, nullptr);
 
-    EXPECT_FALSE(heart_beat_.StartMonitoring());
+    EXPECT_FALSE(heart_beat_->StartMonitoring());
 }
 
 /**

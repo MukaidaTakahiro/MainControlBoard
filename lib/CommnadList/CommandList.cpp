@@ -33,17 +33,17 @@ CmdSetBobPower::~CmdSetBobPower()
 
 bool CmdSetBobPower::ExcuteCmd(std::vector<uint8_t> cmd_arg)
 {
-    auto response = std::make_unique<std::vector<uint8_t>>();
+    std::vector<uint8_t> response;
     
     /* コマンド送信 */
-    if(!ex_board_->SendCmd(BoardId::kBob, cmd_arg, response.get()))
+    if(!ex_board_->SendCmd(BoardId::kBob, cmd_arg, &response))
     {
         return false;
     }
 
     /* 受信処理 */
     response_.clear();
-    response_.insert(response_.begin(), response->begin(), response->end());
+    response_.insert(response_.begin(), response.begin(), response.end());
     
     return false;
 }
@@ -65,21 +65,17 @@ CmdSetPrbPower::~CmdSetPrbPower()
 
 bool CmdSetPrbPower::ExcuteCmd(std::vector<uint8_t> cmd_arg)
 {
-    auto response = std::make_unique<std::vector<uint8_t>>();
+    std::vector<uint8_t> response;
     
     /* コマンド送信 */
-    if(!ex_board_->SendCmd(BoardId::kPrb, cmd_arg, response.get()))
+    if(!ex_board_->SendCmd(BoardId::kPrb, cmd_arg, &response))
     {
         return false;
     }
 
-    //uint16_t size = response->size();
-    //uint8_t debug_array[size] = {0};
-    //std::copy((*response).begin(), (*response).end(), debug_array);
-
     /* 受信処理 */
     response_.clear();
-    response_.insert(response_.begin(), response->begin(), response->end());
+    response_.insert(response_.begin(), response.begin(), response.end());
     
     return true;
 }
@@ -125,18 +121,29 @@ bool CmdControl::ExcuteCmd(const std::vector<uint8_t> cmd_msg)
         return false;
     }
 
-    /* IMUデータを取得 */
+    /* 姿勢データを取得 */
     uint8_t cmd_value = cmd_msg.front();
-    std::vector<uint8_t> send_cmd(cmd_value) ;
-    auto response = std::make_unique<std::vector<uint8_t>>();
-    if (!ex_board_->SendCmd(BoardId::kBob, send_cmd, response.get()))
+    std::vector<uint8_t> send_cmd;
+    send_cmd.push_back(cmd_value);
+
+    std::vector<uint8_t> response;
+
+#ifndef _NONE_BOB    
+    if (!ex_board_->SendCmd(BoardId::kBob, send_cmd, &response))
     {
         return false;
     }
-
+#else
+    response.push_back(cmd_value + 1);
+    for (uint16_t i = 0; i < kResArgSize; i++)
+    {
+        response.push_back(i);
+    }
+#endif
+    
     // 返信をレスポンスを作る
     response_.clear();
-    std::copy(response->begin(), response->end(), response_.begin());
+    response_.insert(response_.begin(), response.begin(), response.end());
 
     return true;
 }

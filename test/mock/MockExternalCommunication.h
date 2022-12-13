@@ -13,7 +13,7 @@ public:
     ~MockExternalCommunication()
     {}
 
-    MOCK_METHOD4(RegistNotionCallback, 
+    MOCK_METHOD4(RegistNotifyCallback, 
                     bool(   std::shared_ptr<void>, 
                             NotifyRecvCmdCallbackEntry, 
                             NotifyPacketSyntaxErrCallbackEntry, 
@@ -22,7 +22,7 @@ public:
 
     MOCK_METHOD1(SendCmdPacket, bool(std::vector<uint8_t>));
 
-    bool TestRegistNotionCallback(
+    bool TestRegistNotifyCallback(
         std::shared_ptr<void> callback_instance, 
         NotifyRecvCmdCallbackEntry notify_recv_cmd,
         NotifyPacketSyntaxErrCallbackEntry notify_packet_syntax_err,

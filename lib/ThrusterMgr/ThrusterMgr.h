@@ -15,7 +15,7 @@ public:
                 std::unique_ptr<IThruster>, std::unique_ptr<IThruster>,
                 std::unique_ptr<IThruster>, std::unique_ptr<IThruster>,
                 std::unique_ptr<IThruster>, std::unique_ptr<IThruster>);
-    ~ThrusterMgr();
+    ~ThrusterMgr() = default;
 
     
     virtual bool OperateThruster(const std::vector<uint16_t>);
@@ -25,16 +25,8 @@ private:
     using ThrusterList = std::vector<std::unique_ptr<IThruster>>;
 
     static constexpr uint16_t kThrusterNum = 8;
-    enum class ThrusterId;
 
     ThrusterList thruster_list_;
-
-};
-
-enum class ThrusterId
-{
-    kThr_1,
-    kThr_2,
 
 };
 

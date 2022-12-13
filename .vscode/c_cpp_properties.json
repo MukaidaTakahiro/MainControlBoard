@@ -10,6 +10,7 @@
             "includePath": [
                 "c:/Work/003_Git/MainControlBoard/Core/Inc",
                 "c:/Work/003_Git/MainControlBoard/Core",
+                "c:/Work/003_Git/MainControlBoard/lib/ThrusterMgr",
                 "c:/Work/003_Git/MainControlBoard/lib/Thruster",
                 "c:/Work/003_Git/MainControlBoard/lib/IThruster",
                 "c:/Work/003_Git/MainControlBoard/lib/InUartCommunication",
@@ -43,7 +44,6 @@
                 "C:/Users/Mukaida/.platformio/packages/framework-stm32cubef4/Drivers/STM32F4xx_HAL_Driver/Src",
                 "C:/Users/Mukaida/.platformio/packages/framework-stm32cubef4/Drivers/CMSIS/DSP/Include",
                 "c:/Work/003_Git/MainControlBoard/lib/ResetIc",
-                "c:/Work/003_Git/MainControlBoard/lib/ThrusterMgr",
                 "C:/Users/Mukaida/.platformio/packages/framework-stm32cubef4/Drivers/BSP/Components/ampire480272",
                 "C:/Users/Mukaida/.platformio/packages/framework-stm32cubef4/Drivers/BSP/Components/ampire640480",
                 "C:/Users/Mukaida/.platformio/packages/framework-stm32cubef4/Drivers/BSP/Components/Common",
@@ -120,6 +120,7 @@
                 "path": [
                     "c:/Work/003_Git/MainControlBoard/Core/Inc",
                     "c:/Work/003_Git/MainControlBoard/Core",
+                    "c:/Work/003_Git/MainControlBoard/lib/ThrusterMgr",
                     "c:/Work/003_Git/MainControlBoard/lib/Thruster",
                     "c:/Work/003_Git/MainControlBoard/lib/IThruster",
                     "c:/Work/003_Git/MainControlBoard/lib/InUartCommunication",
@@ -153,7 +154,6 @@
                     "C:/Users/Mukaida/.platformio/packages/framework-stm32cubef4/Drivers/STM32F4xx_HAL_Driver/Src",
                     "C:/Users/Mukaida/.platformio/packages/framework-stm32cubef4/Drivers/CMSIS/DSP/Include",
                     "c:/Work/003_Git/MainControlBoard/lib/ResetIc",
-                    "c:/Work/003_Git/MainControlBoard/lib/ThrusterMgr",
                     "C:/Users/Mukaida/.platformio/packages/framework-stm32cubef4/Drivers/BSP/Components/ampire480272",
                     "C:/Users/Mukaida/.platformio/packages/framework-stm32cubef4/Drivers/BSP/Components/ampire640480",
                     "C:/Users/Mukaida/.platformio/packages/framework-stm32cubef4/Drivers/BSP/Components/Common",
@@ -229,6 +229,7 @@
             "defines": [
                 "PLATFORMIO=60105",
                 "STM32F446xx",
+                "_NONE_BOB",
                 "USE_HAL_DRIVER",
                 "F_CPU=180000000L",
                 ""

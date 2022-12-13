@@ -33,8 +33,28 @@ void MainRoutine::Init()
 
     ex_board_ = std::make_shared<ExternalBoard>(nullptr, prb_comm_, nullptr);
 
+    /* スラスタ設定 */
+    thruster_0_ = std::make_unique<Thruster>(&htim3, TIM_CHANNEL_1);
+    thruster_1_ = std::make_unique<Thruster>(&htim3, TIM_CHANNEL_2);
+    thruster_2_ = std::make_unique<Thruster>(&htim3, TIM_CHANNEL_3);
+    thruster_3_ = std::make_unique<Thruster>(&htim3, TIM_CHANNEL_4);
+    thruster_4_ = std::make_unique<Thruster>(&htim4, TIM_CHANNEL_1);
+    thruster_5_ = std::make_unique<Thruster>(&htim4, TIM_CHANNEL_2);
+    thruster_6_ = std::make_unique<Thruster>(&htim4, TIM_CHANNEL_3);
+    thruster_7_ = std::make_unique<Thruster>(&htim4, TIM_CHANNEL_4);
+
+    thruster_mgr_ = std::make_unique<ThrusterMgr>(  std::move(thruster_0_),
+                                                    std::move(thruster_1_),
+                                                    std::move(thruster_2_),
+                                                    std::move(thruster_3_),
+                                                    std::move(thruster_4_),
+                                                    std::move(thruster_5_),
+                                                    std::move(thruster_6_),
+                                                    std::move(thruster_7_));
+    
+
     cmd_mgr_ = std::make_shared<CommandMgr>(ex_comm_, 
-                                            nullptr, 
+                                            std::move(thruster_mgr_), 
                                             ex_board_, 
                                             nullptr, 
                                             nullptr);

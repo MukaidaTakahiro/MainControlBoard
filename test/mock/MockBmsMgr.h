@@ -7,7 +7,7 @@
 
 class MockBmsMgr: public IBmsMgr
 {
-
+    MOCK_METHOD0(GetBmsParam, BmsParam(void));
 };
 
 #endif /* MOCK_BMS_MGR_H_ */

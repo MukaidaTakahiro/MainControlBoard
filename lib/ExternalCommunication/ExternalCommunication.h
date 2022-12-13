@@ -31,7 +31,7 @@ public:
 
     bool Init();
 
-    bool RegistNotifyCallback(std::shared_ptr<void>, 
+    bool RegistNotifyCallback(  std::shared_ptr<void>, 
                                 NotifyRecvCmdCallbackEntry,
                                 NotifyPacketSyntaxErrCallbackEntry,
                                 NotifyChecksumErrCallbackEntry);
@@ -94,9 +94,15 @@ private:
 
     /* メンバ関数宣言 */
     virtual void PerformTask();
+    void ParsePacket();
     PacketParsingResult ParseSyntax(const std::vector<uint8_t>);
     uint8_t AddChecksum(const uint8_t, const uint8_t);
     uint8_t CalcChecksum(const std::vector<uint8_t>);
+
+#ifdef _UNIT_TEST
+public:
+    friend void CallPerformTask(std::shared_ptr<ExternalCommunication>);
+#endif /* _UNIT_TEST */
 };
 
 #endif /* EXTERNALCOMMUNICATION_H_ */

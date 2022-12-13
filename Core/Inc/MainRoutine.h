@@ -14,6 +14,7 @@
 #include "BmsMgr.h"
 #include "Bms.h"
 #include "Thruster.h"
+#include "ThrusterMgr.h"
 #include "InternalCommunication.h"
 #include "InUartCommunication.h"
 #include "HeartBeat.h"
@@ -44,6 +45,17 @@ public:
     std::shared_ptr<InternalCommunication> bob_comm_;
     std::shared_ptr<InternalCommunication> prb_comm_;
     std::shared_ptr<InternalCommunication> eob_comm_;
+
+    std::unique_ptr<Thruster> thruster_0_;
+    std::unique_ptr<Thruster> thruster_1_;
+    std::unique_ptr<Thruster> thruster_2_;
+    std::unique_ptr<Thruster> thruster_3_;
+    std::unique_ptr<Thruster> thruster_4_;
+    std::unique_ptr<Thruster> thruster_5_;
+    std::unique_ptr<Thruster> thruster_6_;
+    std::unique_ptr<Thruster> thruster_7_;
+
+    std::unique_ptr<ThrusterMgr> thruster_mgr_;
     
 
 private:

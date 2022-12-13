@@ -31,9 +31,17 @@ public:
 
     virtual void * pvTimerGetTimerID( const TimerHandle_t xTimer ) = 0;
 
-    /* タスク関連 */
     virtual TickType_t xTaskGetTickCount( void ) = 0;
     virtual TickType_t xTaskGetTickCountFromISR( void ) = 0;
+    
+    /* タスク関連 */
+    virtual BaseType_t xTaskCreate( TaskFunction_t pxTaskCode,
+                            const char * const pcName,
+                            const configSTACK_DEPTH_TYPE usStackDepth,
+                            void * const pvParameters,
+                            UBaseType_t uxPriority,
+                            TaskHandle_t * const pxCreatedTask ) = 0;
+    virtual void vTaskDelete( TaskHandle_t xTaskToDelete ) = 0;
 };
 
 class MockFreeRtos: public IFreeRtos
@@ -55,6 +63,15 @@ public:
     MOCK_METHOD1(pvTimerGetTimerID, void *(const TimerHandle_t));
     MOCK_METHOD0(xTaskGetTickCount, TickType_t(void));
     MOCK_METHOD0(xTaskGetTickCountFromISR, TickType_t(void));
+
+    /* タスク関連 */
+    MOCK_METHOD6(xTaskCreate, BaseType_t(   TaskFunction_t,
+                                            const char * const,
+                                            const configSTACK_DEPTH_TYPE,
+                                            void * const,
+                                            UBaseType_t,
+                                            TaskHandle_t * const));
+    MOCK_METHOD1(vTaskDelete, void(TaskHandle_t));
 
 };
 

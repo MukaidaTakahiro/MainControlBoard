@@ -140,7 +140,7 @@ private:
 #pragma pack(1)
 struct CmdControl::CmdArgList
 {
-    int16_t thruster_power[kThrusterNum];
+    uint16_t thruster_power[kThrusterNum];
 };
 #pragma pack()
 

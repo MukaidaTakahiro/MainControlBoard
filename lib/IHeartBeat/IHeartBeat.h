@@ -6,7 +6,7 @@
 class IHeartBeat
 {
 public:
-    virtual ~IHeartBeat();
+    virtual ~IHeartBeat() = default;
     
     virtual bool StartMonitoring() = 0;
     virtual bool StopMonitoring() = 0;

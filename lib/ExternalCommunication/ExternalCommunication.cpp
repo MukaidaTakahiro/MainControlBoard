@@ -89,64 +89,8 @@ bool ExternalCommunication::RegistNotifyCallback(
 }
 
 
-
-/***********************************************************/
-/* Privateメソッド定義                                     */
-/***********************************************************/
-
-void ExternalCommunication::PerformTask()
-{
-    std::vector<uint8_t> parse_buffer;
-
-    while (1)
-    {
-        uart_comm_->WaitReceiveData(portMAX_DELAY);
-
-        PacketParsingResult result;
-        parse_buffer.push_back(uart_comm_->ReadByte());
-
-        result = ParseSyntax(parse_buffer);
-
-        uint16_t packet_length;
-
-        switch (result)
-        {
-        case PacketParsingResult::kParsing:
-            break;
-        case PacketParsingResult::kReceived:
-            packet_length = static_cast<uint16_t>(parse_buffer[kIndexLength]);
-            notify_recv_cmd_(   callback_instance_, 
-                                {   parse_buffer.begin() + 3, 
-                                    parse_buffer.begin() + packet_length - 1});
-            parse_buffer.erase( parse_buffer.begin(), 
-                                parse_buffer.begin() + packet_length);
-            break;
-
-        case PacketParsingResult::kMismatch:
-            parse_buffer.erase(parse_buffer.begin());
-            break;
-
-        case PacketParsingResult::kSyntaxErr:
-            notify_packet_syntax_err_(callback_instance_);
-            parse_buffer.erase( parse_buffer.begin(), 
-                                parse_buffer.begin() + kIndexLength + 1);
-            break;
-
-        case PacketParsingResult::kChecksumErr:
-            notify_checksum_err_(callback_instance_);
-            
-            packet_length = static_cast<uint16_t>(parse_buffer[kIndexLength]);
-            parse_buffer.erase( parse_buffer.begin(), 
-                                parse_buffer.begin() + packet_length);
-            break;
-        default:
-            break;
-        }
-    }    
-}
-
 /**
- * @brief 
+ * @brief コマンドを通信パケットに変換して送信する
  * 
  * @param cmd コマンドメッセージ
  * @return bool true:成功 false:構文エラー
@@ -181,6 +125,68 @@ bool ExternalCommunication::SendCmdPacket(const std::vector<uint8_t> cmd)
     return uart_comm_->SendMsg(packet);
 }
 
+/***********************************************************/
+/* Privateメソッド定義                                     */
+/***********************************************************/
+
+void ExternalCommunication::PerformTask()
+{
+    std::vector<uint8_t> parse_buffer;
+
+    while (1)
+    {
+        ParsePacket();
+    }    
+}
+
+inline void ExternalCommunication::ParsePacket()
+{
+    static std::vector<uint8_t> parse_buffer;
+    parse_buffer.reserve(kMaxCmdSize);
+
+    uart_comm_->WaitReceiveData(portMAX_DELAY);
+
+    PacketParsingResult result;
+    parse_buffer.push_back(uart_comm_->ReadByte());
+
+    result = ParseSyntax(parse_buffer);
+
+    uint16_t packet_length;
+
+    switch (result)
+    {
+    case PacketParsingResult::kParsing:
+        break;
+    case PacketParsingResult::kReceived:
+        packet_length = static_cast<uint16_t>(parse_buffer[kIndexLength]);
+        notify_recv_cmd_(   callback_instance_,
+                            {parse_buffer.begin() + 3,
+                            parse_buffer.begin() + packet_length - 1});
+        parse_buffer.erase( parse_buffer.begin(),
+                            parse_buffer.begin() + packet_length);
+        break;
+
+    case PacketParsingResult::kMismatch:
+        parse_buffer.erase(parse_buffer.begin());
+        break;
+
+    case PacketParsingResult::kSyntaxErr:
+        notify_packet_syntax_err_(callback_instance_);
+        parse_buffer.erase( parse_buffer.begin(),
+                            parse_buffer.begin() + kIndexLength + 1);
+        break;
+
+    case PacketParsingResult::kChecksumErr:
+        notify_checksum_err_(callback_instance_);
+
+        packet_length = static_cast<uint16_t>(parse_buffer[kIndexLength]);
+        parse_buffer.erase( parse_buffer.begin(),
+                            parse_buffer.begin() + packet_length);
+        break;
+    default:
+        break;
+    }
+}
 
 ExternalCommunication::PacketParsingResult 
 ExternalCommunication::ParseSyntax(const std::vector<uint8_t> parse_array)

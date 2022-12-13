@@ -39,7 +39,7 @@ public:
 
 
 /**
- * @brief 高優先度コマンド
+ * @brief 制御コマンド
  * 
  */
 class CmdControl final: public CommandBase
