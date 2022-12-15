@@ -10,7 +10,7 @@ class MockNotificationUartIrq: public INotificationUartIrq
 {
 public:
     MOCK_METHOD2(   RegistNotifyHeartBeatCallback, 
-                    bool(std::shared_ptr<void>, NotifyHeartBeatCallback));
+                    bool(void* const, NotifyHeartBeatCallback));
 };
 
 #endif /* MOCK_NOTIFICATION_UART_IRQ_H_ */

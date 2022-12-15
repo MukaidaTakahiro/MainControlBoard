@@ -9,6 +9,9 @@
 #ifdef _UNIT_TEST
 #include "gtest/gtest.h"
 #endif /* _UNIT_TEST */
+#ifdef DEBUG
+#include "main.h"
+#endif
 
 constexpr uint8_t ExternalCommunication::kPacketHeader1;
 constexpr uint8_t ExternalCommunication::kPacketHeader2;
@@ -97,13 +100,15 @@ bool ExternalCommunication::RegistNotifyCallback(
  */
 bool ExternalCommunication::SendCmdPacket(const std::vector<uint8_t> cmd)
 {
-    std::vector<uint8_t> packet; /* 送信パケット */
-
     /* サイズチェック */
     if (cmd.size() > kMaxCmdSize || cmd.size() <= 0)
     {
         return false;
     }
+
+    uint16_t packet_length = cmd.size() + kMinPacketSize - 1;
+    std::vector<uint8_t> packet; /* 送信パケット */
+    packet.reserve(packet_length);
 
     /* header-1 */
     packet.push_back(kPacketHeader1);
@@ -112,7 +117,7 @@ bool ExternalCommunication::SendCmdPacket(const std::vector<uint8_t> cmd)
     packet.push_back(kPacketHeader2);
 
     /* パケット長格納 */
-    packet.push_back(static_cast<uint8_t>(cmd.size() + kMinPacketSize - 1));
+    packet.push_back(static_cast<uint8_t>(packet_length));
 
     /* コマンド格納 */
     packet.insert(packet.end(), cmd.begin(), cmd.end());
@@ -120,6 +125,8 @@ bool ExternalCommunication::SendCmdPacket(const std::vector<uint8_t> cmd)
     /* チェックサム格納 */
     uint8_t checksum = CalcChecksum(packet);
     packet.push_back(checksum);
+
+    HAL_GPIO_WritePin(Debug1_GPIO_Port, Debug1_Pin, GPIO_PIN_RESET);
 
     /* パケット送信 */
     return uart_comm_->SendMsg(packet);
@@ -146,10 +153,12 @@ inline void ExternalCommunication::ParsePacket()
 
     uart_comm_->WaitReceiveData(portMAX_DELAY);
 
-    PacketParsingResult result;
-    parse_buffer.push_back(uart_comm_->ReadByte());
+    while (!uart_comm_->IsUartEmpty())
+    {
+        parse_buffer.push_back(uart_comm_->ReadByte());
+    }
 
-    result = ParseSyntax(parse_buffer);
+    auto result = ParseSyntax(parse_buffer);
 
     uint16_t packet_length;
 
@@ -158,12 +167,15 @@ inline void ExternalCommunication::ParsePacket()
     case PacketParsingResult::kParsing:
         break;
     case PacketParsingResult::kReceived:
+        HAL_GPIO_WritePin(Debug1_GPIO_Port, Debug1_Pin, GPIO_PIN_SET);
         packet_length = static_cast<uint16_t>(parse_buffer[kIndexLength]);
         notify_recv_cmd_(   callback_instance_,
                             {parse_buffer.begin() + 3,
                             parse_buffer.begin() + packet_length - 1});
         parse_buffer.erase( parse_buffer.begin(),
                             parse_buffer.begin() + packet_length);
+
+        //HAL_GPIO_TogglePin(Debug1_GPIO_Port, Debug1_Pin);
         break;
 
     case PacketParsingResult::kMismatch:
@@ -234,8 +246,8 @@ ExternalCommunication::ParseSyntax(const std::vector<uint8_t> parse_array)
     }
 
     /* Checksum */
-    uint8_t checksum 
-                = CalcChecksum({parse_array.begin(), parse_array.begin() + packet_length - 1});
+    uint8_t checksum = CalcChecksum({parse_array.begin(), 
+                                    parse_array.begin() + packet_length - 1});
 
     if (checksum != parse_array[packet_length - 1])
     {

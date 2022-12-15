@@ -87,9 +87,6 @@ private:
                         /* チェックサムエラー通知のコールバック関数ポインタ   */
     NotifyChecksumErrCallbackEntry notify_checksum_err_;
     PacketPasingState state_;         /* 解析状態                    */
-    uint8_t checksum_;               /* チェックサム値              */
-    uint16_t recv_data_cnt_;          /* 受信したデータサイズ        */
-    uint16_t packet_length_;          /* パケット長                  */
     std::vector<uint8_t> cmd_msg_;    /* cmdメッセージ               */
 
     /* メンバ関数宣言 */

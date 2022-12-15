@@ -18,20 +18,23 @@
 
 #include "INotificationUartIrq.h"
 #include "IResetIc.h"
+#include "IHeartBeat.h"
 
-class HeartBeat: public std::enable_shared_from_this<HeartBeat>
+class HeartBeat: public IHeartBeat
 {
 public:
-    HeartBeat(std::shared_ptr<INotificationUartIrq>, std::shared_ptr<IResetIc>);
+    HeartBeat(IResetIc&);
     ~HeartBeat();
 
+    virtual void Init(INotificationUartIrq&);
     virtual bool StartMonitoring();
     virtual bool StopMonitoring();
     virtual bool SetMonitoringTimeout(uint32_t);
+    virtual bool IsMonitoringComm();
+    virtual uint16_t GetTimeout();
 private:
-    std::shared_ptr<INotificationUartIrq> monitor_comm_;
-    std::shared_ptr<IResetIc> reset_ic_;
-    bool monitoring_status_;
+    IResetIc& reset_ic_;
+    bool is_monitoring_comm_;
     uint32_t shutdown_timeout_;
     TimerHandle_t monitor_comm_timer_;
 

@@ -11,6 +11,8 @@ public:
     virtual bool StartMonitoring() = 0;
     virtual bool StopMonitoring() = 0;
     virtual bool SetMonitoringTimeout(uint16_t) = 0;
+    virtual bool IsMonitoringComm() = 0;
+    virtual uint16_t GetTimeout() = 0;
 };
 
 #endif /* I_HEART_BEAT_H_ */

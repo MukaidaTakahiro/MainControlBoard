@@ -11,7 +11,7 @@ public:
     using NotifyHeartBeatCallback
             = std::function<void(std::shared_ptr<void>)>;
 
-    virtual bool RegistNotifyHeartBeatCallback( std::shared_ptr<void>, 
+    virtual bool RegistNotifyHeartBeatCallback( void* const, 
                                                 NotifyHeartBeatCallback) = 0;
 };
 

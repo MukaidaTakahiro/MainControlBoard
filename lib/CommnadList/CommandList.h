@@ -18,6 +18,7 @@
 #include "CommandBase.h"
 #include "IThrusterMgr.h"
 #include "IExternalBoard.h"
+#include "IHeartBeat.h"
 
 #ifdef _UNIT_TEST
 #include <gmock/gmock.h>
@@ -102,6 +103,65 @@ private:
     /* 変数宣言 */
     const std::shared_ptr<IExternalBoard> ex_board_;
 };
+
+/******************************************************************************/
+/* CmdSetCommMonitor **********************************************************/
+/******************************************************************************/
+class CmdSetCommMonitor final: public CommandBase
+{
+public:
+    CmdSetCommMonitor(IHeartBeat&);
+    ~CmdSetCommMonitor() = default;
+    virtual bool ExcuteCmd(const std::vector<uint8_t>);
+    virtual std::vector<uint8_t> CreateResponse();
+
+private:
+    /* 定数宣言 */
+                                            /* コマンド引数のバイトサイズ     */
+    static constexpr uint16_t kCmdArgSize = 3; 
+                                            /* レスポンス引数のバイトサイズ   */
+    static constexpr uint16_t kResArgSize = 3; 
+
+    /* 型宣言 */
+    struct CmdArgList;
+    union CmdField;
+    struct ResArgList;
+    union ResField;
+
+    /* 変数宣言 */
+    IHeartBeat& heart_beat_;
+    std::vector<uint8_t> response_;
+};
+
+#pragma pack(1)
+struct CmdSetCommMonitor::CmdArgList
+{
+    uint8_t monitor_mode;   /* 監視モード 0x00:OFF, 0x01:ON */
+    uint16_t timeout;       /* タイムアウト時間[ms] */
+};
+#pragma pack()
+
+union CmdSetCommMonitor::CmdField
+{
+    CmdArgList cmd_arg_list;
+    uint8_t cmd_arg_byte[kCmdArgSize];
+};
+
+#pragma pack(1)
+struct CmdSetCommMonitor::ResArgList
+{
+    uint8_t monitor_mode;   /* 監視モード 0x00:OFF, 0x01:ON */
+    uint8_t timeout;        /* タイムアウト時間[ms] */
+};
+#pragma pack()
+
+union CmdSetCommMonitor::ResField
+{
+    ResArgList res_arg_list;
+    uint8_t res_arg_byte[kResArgSize];
+};
+
+
 
 /******************************************************************************/
 /* CmdControl *****************************************************************/

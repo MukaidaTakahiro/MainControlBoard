@@ -18,7 +18,6 @@ ExUartCommunication::ExUartCommunication(
     
 {
     recv_buffer_mutex_ = xSemaphoreCreateMutex();
-    task_buffer_ = xStreamBufferCreate(256, 1);
 }
 
 
@@ -118,7 +117,7 @@ bool ExUartCommunication::SendMsg(std::vector<uint8_t> msg)
  * @return bool 
  */
 bool ExUartCommunication::RegistNotifyHeartBeatCallback(
-                                                std::shared_ptr<void> instance,
+                                                void* instance,
                                                 NotifyHeartBeatCallback func)
 {
     if (instance == nullptr || func == nullptr)

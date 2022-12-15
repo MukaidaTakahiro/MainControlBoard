@@ -230,6 +230,7 @@
                 "PLATFORMIO=60105",
                 "STM32F446xx",
                 "_NONE_BOB",
+                "DEBUG",
                 "USE_HAL_DRIVER",
                 "F_CPU=180000000L",
                 ""

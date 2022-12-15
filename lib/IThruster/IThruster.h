@@ -8,7 +8,7 @@
 class IThruster
 {
 public:
-    virtual bool SetDuty(uint32_t) = 0;
+    virtual bool SetPulseWidth(uint32_t) = 0;
 };
 
 

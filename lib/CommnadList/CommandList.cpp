@@ -86,6 +86,45 @@ std::vector<uint8_t> CmdSetPrbPower::CreateResponse()
 }
 
 /******************************************************************************/
+/* CmdSetCommMonitor **********************************************************/
+/******************************************************************************/
+CmdSetCommMonitor::CmdSetCommMonitor(IHeartBeat& heart_beat)
+:   CommandBase(kCmdArgSize), heart_beat_(heart_beat)
+{
+    response_.reserve(kResArgSize);
+}
+
+bool CmdSetCommMonitor::ExcuteCmd(const std::vector<uint8_t> cmd_msg)
+{
+    std::vector<uint8_t> cmd_arg {cmd_msg.begin() + 1, cmd_msg.end()};
+    CmdField cmd_field;
+
+    memcpy(cmd_field.cmd_arg_byte, cmd_arg.data(), cmd_arg.size());
+
+    if (cmd_field.cmd_arg_list.monitor_mode == 0)
+    {
+        heart_beat_.StopMonitoring();
+    }
+    else if (cmd_field.cmd_arg_list.monitor_mode == 1)
+    {
+        heart_beat_.SetMonitoringTimeout(cmd_field.cmd_arg_list.timeout);
+        heart_beat_.StartMonitoring();
+    }
+    
+    ResField res_field;
+    res_field.res_arg_list.monitor_mode = heart_beat_.GetTimeout() ? 1 : 0;
+    res_field.res_arg_list.timeout = heart_beat_.GetTimeout();
+
+    response_.clear();
+    response_.insert(   response_.begin(), 
+                        res_field.res_arg_byte, 
+                        res_field.res_arg_byte + kResArgSize);
+
+    return true;
+}
+
+
+/******************************************************************************/
 /* CmdControl *****************************************************************/
 /******************************************************************************/
 
@@ -93,6 +132,7 @@ CmdControl::CmdControl( const std::shared_ptr<IThrusterMgr> thruster,
                         const std::shared_ptr<IExternalBoard> ex_board)
 :   CommandBase(kCmdArgSize),  thruster_mgr_(thruster), ex_board_(ex_board)
 {
+    response_.reserve(kResArgSize);
 }
 
 CmdControl::~CmdControl()
@@ -105,7 +145,6 @@ bool CmdControl::ExcuteCmd(const std::vector<uint8_t> cmd_msg)
     std::vector<uint8_t> cmd_arg {cmd_msg.begin() + 1, cmd_msg.end()};
     CmdField cmd_field;
     std::vector<uint16_t> thruster_power_vec;
-
 
     memcpy(cmd_field.cmd_arg_byte, cmd_arg.data(), cmd_arg.size());
 
@@ -143,7 +182,7 @@ bool CmdControl::ExcuteCmd(const std::vector<uint8_t> cmd_msg)
     
     // 返信をレスポンスを作る
     response_.clear();
-    response_.insert(response_.begin(), response.begin(), response.end());
+    std::copy(response.begin(), response.end(), std::back_inserter(response_));
 
     return true;
 }

@@ -11,11 +11,9 @@
 
 #include "HeartBeat.h"
 
-HeartBeat::HeartBeat(   std::shared_ptr<INotificationUartIrq> monitor_comm, 
-                        std::shared_ptr<IResetIc> reset_ic)
-:   monitor_comm_(monitor_comm),
-    reset_ic_(reset_ic),
-    monitoring_status_(false),
+HeartBeat::HeartBeat(IResetIc& reset_ic)
+:   reset_ic_(reset_ic),
+    is_monitoring_comm_(false),
     shutdown_timeout_(UINT32_MAX)
 {
     /* タイマ―作成 */
@@ -31,6 +29,12 @@ HeartBeat::~HeartBeat()
 {
 }
 
+void HeartBeat::Init(INotificationUartIrq& notification_uart_irq)
+{
+    notification_uart_irq.RegistNotifyHeartBeatCallback(this, 
+                                                        UartIrqCallbackEntry);
+}
+
 /**
  * @brief 監視開始
  * 
@@ -40,22 +44,13 @@ bool HeartBeat::StartMonitoring()
 {
 
     /* ステータスチェック */
-    if(monitoring_status_ == true)
-    {
-        return false;
-    }
-
-    /* UART割込み処理登録 */
-    if (monitor_comm_ == nullptr)
+    if(is_monitoring_comm_ == true)
     {
         return false;
     }
     
-    monitor_comm_->RegistNotifyHeartBeatCallback(shared_from_this(),
-                                                UartIrqCallbackEntry);
-
     /* タイマースタート */
-    monitoring_status_ = true;
+    is_monitoring_comm_ = true;
     xTimerStart(monitor_comm_timer_, 0);
     
     return true;
@@ -68,13 +63,13 @@ bool HeartBeat::StartMonitoring()
  */
 bool HeartBeat::StopMonitoring()
 {
-    if(monitoring_status_ == false)
+    if(is_monitoring_comm_ == false)
     {
         return false;
     }
 
     xTimerStop(monitor_comm_timer_, 0);
-    monitoring_status_ = false;
+    is_monitoring_comm_ = false;
     
     return true;
 }
@@ -96,6 +91,18 @@ bool HeartBeat::SetMonitoringTimeout(uint32_t shutdown_timeout)
     return true;
 }
 
+bool HeartBeat::IsMonitoringComm()
+{
+    return is_monitoring_comm_;
+}
+
+uint16_t HeartBeat::GetTimeout()
+{
+    return static_cast<uint16_t>(shutdown_timeout_ & 0x0000FFFF);
+}
+
+/* Private関数 ****************************************************************/
+
 /**
  * @brief タイムアウト処理エントリー関数
  * 
@@ -108,11 +115,7 @@ void HeartBeat::TimeoutCallbackEntry(TimerHandle_t xTimer)
 
 void HeartBeat::TimeoutCallback()
 {
-    if (reset_ic_ == nullptr)
-    {
-        return;
-    }
-    reset_ic_->ShutdownSystem();
+    reset_ic_.ShutdownSystem();
 }
 
 /**

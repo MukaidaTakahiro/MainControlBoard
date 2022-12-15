@@ -14,9 +14,10 @@ class Thruster: public IThruster
 public:
     Thruster(TIM_HandleTypeDef* const, const uint32_t);
     ~Thruster();
-    virtual bool SetDuty(uint32_t);
+    virtual bool SetPulseWidth(uint32_t);
 
 private:
+
     TIM_HandleTypeDef* const htim_;
     const uint32_t channel_;
 };

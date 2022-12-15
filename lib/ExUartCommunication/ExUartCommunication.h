@@ -51,7 +51,7 @@ public:
     virtual bool SendMsg(std::vector<uint8_t>);
 
     /* 通信監視 */
-    virtual bool RegistNotifyHeartBeatCallback(std::shared_ptr<void>, 
+    virtual bool RegistNotifyHeartBeatCallback(void* const, 
                                                 NotifyHeartBeatCallback);
 
 private:
@@ -69,13 +69,10 @@ private:
     SemaphoreHandle_t recv_buffer_mutex_;       /* 受信データ用mutex  */
 
     volatile TaskHandle_t recv_buffer_task_;
-    StreamBufferHandle_t task_buffer_;
 
-    std::shared_ptr<void> uart_callback_instance_; /* UART呼び出し時のコールバックインスタンス */
+    void* uart_callback_instance_; /* UART呼び出し時のコールバックインスタンス */
     NotifyHeartBeatCallback uart_callback_func_;     /* UART呼び出し時のコールバック関数 */
     
-    uint16_t read_ptr_;   /* DMA受信バッファの先頭インデックス */
-
     
     /* メンバ関数 */
     void PerformTask();

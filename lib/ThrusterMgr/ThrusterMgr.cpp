@@ -26,7 +26,7 @@ bool ThrusterMgr::OperateThruster(const std::vector<uint16_t> duty_list)
 {
     for (uint16_t i = 0; i < thruster_list_.size(); i++)
     {
-        thruster_list_[i]->SetDuty(static_cast<uint32_t>(duty_list[i]));
+        thruster_list_[i]->SetPulseWidth(static_cast<uint32_t>(duty_list[i]));
     }
 
     return true;
