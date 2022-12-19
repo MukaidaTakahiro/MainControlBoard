@@ -10,16 +10,16 @@ class IExternalCommunication
 {
 public:
     using NotifyRecvCmdCallbackEntry 
-            = std::function<void(std::shared_ptr<void>, std::vector<uint8_t>)>;
+            = std::function<void(void*, std::vector<uint8_t>)>;
     using NotifyPacketSyntaxErrCallbackEntry 
-            = std::function<void(std::shared_ptr<void>)>;
+            = std::function<void(void*)>;
     using NotifyChecksumErrCallbackEntry 
-            = std::function<void(std::shared_ptr<void>)>;
+            = std::function<void(void*)>;
 
     virtual ~IExternalCommunication()
     {}
     virtual bool Init() = 0;
-    virtual bool RegistNotifyCallback(  std::shared_ptr<void>, 
+    virtual bool RegistNotifyCallback(  void*, 
                                         NotifyRecvCmdCallbackEntry,
                                         NotifyPacketSyntaxErrCallbackEntry,
                                         NotifyChecksumErrCallbackEntry) 

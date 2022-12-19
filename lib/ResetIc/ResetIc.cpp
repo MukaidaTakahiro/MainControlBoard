@@ -14,14 +14,14 @@
 ResetIc::ResetIc(GPIO_TypeDef* const gpio_port, const uint32_t gpio_pin)
 :   gpio_port_(gpio_port), gpio_pin_(gpio_pin)
 {
-    HAL_GPIO_WritePin(gpio_port_, gpio_pin_, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(gpio_port_, gpio_pin_, GPIO_PIN_SET);
 }
 
-ResetIc::~ResetIc()
-{
-}
-
+/**
+ * @brief システムシャットダウン
+ * 
+ */
 void ResetIc::ShutdownSystem()
 {
-    HAL_GPIO_WritePin(gpio_port_, gpio_pin_, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(gpio_port_, gpio_pin_, GPIO_PIN_RESET);
 }

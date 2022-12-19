@@ -10,7 +10,7 @@ class ResetIc: public IResetIc
 {
 public:
     ResetIc(GPIO_TypeDef *,uint32_t);
-    ~ResetIc();
+    ~ResetIc() = default;
 
     virtual void ShutdownSystem();
 

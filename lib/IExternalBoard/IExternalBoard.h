@@ -11,15 +11,15 @@ public:
     enum class BoardId;
     virtual bool SendCmd(   BoardId,
                             const std::vector<uint8_t>, 
-                            std::vector<uint8_t>*) = 0;
+                            std::vector<uint8_t>&) = 0;
 
 };
 
 enum class IExternalBoard::BoardId
 {
-    kBob,   /* Basic Option Board     */
-    kPrb,   /* Power Root Board       */
-    kEob    /* Extention Option Board */
+    kBob = 0,   /* Basic Option Board     */
+    kPrb,       /* Power Root Board       */
+    kEob        /* Extention Option Board */
 };
 
 

@@ -27,7 +27,7 @@
 using BoardId = IExternalBoard::BoardId;
 
 /******************************************************************************/
-/* CmdError *******************************************************************/
+/* CmdError[0x01] *************************************************************/
 /******************************************************************************/
 
 /**
@@ -43,7 +43,7 @@ public:
     CmdError(ErrorType);
     ~CmdError();
 
-    virtual bool ExcuteCmd(std::vector<uint8_t>);
+    virtual bool ExcuteCmd(const std::vector<uint8_t>&);
     virtual std::vector<uint8_t> CreateResponse();
 
 private:
@@ -63,15 +63,15 @@ enum class CmdError::ErrorType: uint8_t
 };
 
 /******************************************************************************/
-/* CmdSetBobPower *************************************************************/
+/* CmdSetBobPower[0x02] *******************************************************/
 /******************************************************************************/
 
 class CmdSetBobPower: public CommandBase
 {
 public:
-    CmdSetBobPower(const std::shared_ptr<IExternalBoard>);
+    CmdSetBobPower(IExternalBoard&);
     ~CmdSetBobPower();
-    virtual bool ExcuteCmd(std::vector<uint8_t>);
+    virtual bool ExcuteCmd(const std::vector<uint8_t>&);
     virtual std::vector<uint8_t> CreateResponse();
 
 private:
@@ -80,19 +80,19 @@ private:
     static constexpr uint16_t kResArgSize = 1; /* レスポンス引数のバイトサイズ */
     
     /* 変数宣言 */
-    const std::shared_ptr<IExternalBoard> ex_board_;
+    IExternalBoard& ex_board_;
 };
 
 /******************************************************************************/
-/* CmdSetPrbPower *************************************************************/
+/* CmdSetPrbPower[0x04] *******************************************************/
 /******************************************************************************/
 
 class CmdSetPrbPower: public CommandBase
 {
 public:
-    CmdSetPrbPower(const std::shared_ptr<IExternalBoard>);
+    CmdSetPrbPower(IExternalBoard&);
     ~CmdSetPrbPower();
-    virtual bool ExcuteCmd(std::vector<uint8_t>);
+    virtual bool ExcuteCmd(const std::vector<uint8_t>&);
     virtual std::vector<uint8_t> CreateResponse();
 
 private:
@@ -101,18 +101,18 @@ private:
     static constexpr uint16_t kResArgSize = 1; /* レスポンス引数のバイトサイズ */
     
     /* 変数宣言 */
-    const std::shared_ptr<IExternalBoard> ex_board_;
+    IExternalBoard& ex_board_;
 };
 
 /******************************************************************************/
-/* CmdSetCommMonitor **********************************************************/
+/* CmdSetCommMonitor[0x12] ****************************************************/
 /******************************************************************************/
 class CmdSetCommMonitor final: public CommandBase
 {
 public:
     CmdSetCommMonitor(IHeartBeat&);
     ~CmdSetCommMonitor() = default;
-    virtual bool ExcuteCmd(const std::vector<uint8_t>);
+    virtual bool ExcuteCmd(const std::vector<uint8_t>&);
     virtual std::vector<uint8_t> CreateResponse();
 
 private:
@@ -151,7 +151,7 @@ union CmdSetCommMonitor::CmdField
 struct CmdSetCommMonitor::ResArgList
 {
     uint8_t monitor_mode;   /* 監視モード 0x00:OFF, 0x01:ON */
-    uint8_t timeout;        /* タイムアウト時間[ms] */
+    uint16_t timeout;       /* タイムアウト時間[ms] */
 };
 #pragma pack()
 
@@ -162,9 +162,8 @@ union CmdSetCommMonitor::ResField
 };
 
 
-
 /******************************************************************************/
-/* CmdControl *****************************************************************/
+/* CmdControl[0x24] ***********************************************************/
 /******************************************************************************/
 
 /**
@@ -176,9 +175,9 @@ class CmdControl final: public CommandBase
 {
 public:
 
-    CmdControl(const std::shared_ptr<IThrusterMgr>, const std::shared_ptr<IExternalBoard>);
+    CmdControl(IThrusterMgr&, IExternalBoard&);
     ~CmdControl();
-    virtual bool ExcuteCmd(const std::vector<uint8_t> cmd_arg);
+    virtual bool ExcuteCmd(const std::vector<uint8_t>& cmd_arg);
     virtual std::vector<uint8_t> CreateResponse();
 
 private:
@@ -193,8 +192,8 @@ private:
 
     /* 変数宣言 */
     std::vector<uint8_t> response_;
-    const std::shared_ptr<IThrusterMgr> thruster_mgr_;
-    const std::shared_ptr<IExternalBoard> ex_board_;
+    IThrusterMgr& thruster_mgr_;
+    IExternalBoard& ex_board_;
 };
 
 #pragma pack(1)

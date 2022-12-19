@@ -14,7 +14,7 @@ public:
     {}
 
     MOCK_METHOD4(RegistNotifyCallback, 
-                    bool(   std::shared_ptr<void>, 
+                    bool(   void*, 
                             NotifyRecvCmdCallbackEntry, 
                             NotifyPacketSyntaxErrCallbackEntry, 
                             NotifyChecksumErrCallbackEntry));
@@ -23,7 +23,7 @@ public:
     MOCK_METHOD1(SendCmdPacket, bool(std::vector<uint8_t>));
 
     bool TestRegistNotifyCallback(
-        std::shared_ptr<void> callback_instance, 
+        void* callback_instance, 
         NotifyRecvCmdCallbackEntry notify_recv_cmd,
         NotifyPacketSyntaxErrCallbackEntry notify_packet_syntax_err,
         NotifyChecksumErrCallbackEntry notify_checksum_err)
@@ -36,7 +36,7 @@ public:
         return true;
     }
 
-    std::shared_ptr<void> callback_instance_;
+    void* callback_instance_;
                         /* コマンド取得時のコールバック関数ポインタ           */
     NotifyRecvCmdCallbackEntry notify_recv_cmd_;
                         /* パケット構文エラー通知のコールバック関数ポインタ   */

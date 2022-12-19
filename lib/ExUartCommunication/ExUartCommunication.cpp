@@ -9,7 +9,7 @@ constexpr uint16_t ExUartCommunication::kRecvDataSize;
  *
  */
 ExUartCommunication::ExUartCommunication(
-                    std::shared_ptr<UartInterrupt> uart_interrupt,
+                    UartInterrupt& uart_interrupt,
                     UART_HandleTypeDef* uart_handle)
 :   TaskBase("ExUartComm", 4, 256),
     uart_interrupt_(uart_interrupt), 
@@ -32,7 +32,7 @@ ExUartCommunication::~ExUartCommunication()
 void ExUartCommunication::Init()
 {
     /* Uart割込みコールバック関数登録 */
-    uart_interrupt_->RegistHandle(uart_handle_);
+    uart_interrupt_.RegistHandle(uart_handle_);
 
     CreateTask();
 }
@@ -153,7 +153,12 @@ bool ExUartCommunication::IsUartEmpty()
  */
 inline void ExUartCommunication::StoreUartData()
 {
-    
+
+	if (uart_callback_func_ != nullptr && uart_callback_instance_ != nullptr)
+	{
+		uart_callback_func_(uart_callback_instance_);
+	}
+
     /* 受信通知 */
     if (recv_buffer_task_ != nullptr)
     {
@@ -173,7 +178,7 @@ void ExUartCommunication::PerformTask()
     {
         uint8_t recv_data;
         
-        recv_data = uart_interrupt_->GetRecvData(uart_handle_);
+        recv_data = uart_interrupt_.GetRecvData(uart_handle_);
         xSemaphoreTake(recv_buffer_mutex_, portMAX_DELAY);
         recv_buffer_.push(recv_data);
         xSemaphoreGive(recv_buffer_mutex_);

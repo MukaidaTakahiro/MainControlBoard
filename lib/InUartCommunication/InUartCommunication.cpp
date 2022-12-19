@@ -19,7 +19,7 @@
  * @param uart_handle 通信先とのUartHandle
  */
 InUartCommunication::InUartCommunication(
-                        const std::shared_ptr<UartInterrupt> uart_interrupt,
+                        UartInterrupt& uart_interrupt,
                         UART_HandleTypeDef* const uart_handle)
 :   TaskBase("InUartComm", 4, 256),
     uart_interrupt_(uart_interrupt), 
@@ -42,7 +42,7 @@ InUartCommunication::~InUartCommunication()
  */
 void InUartCommunication::Init()
 {
-    uart_interrupt_->RegistHandle(uart_handle_);
+    uart_interrupt_.RegistHandle(uart_handle_);
     CreateTask();
 }
 
@@ -134,7 +134,7 @@ void InUartCommunication::PerformTask()
     while (1)
     {
         uint8_t recv_data;
-        recv_data = uart_interrupt_->GetRecvData(uart_handle_);
+        recv_data = uart_interrupt_.GetRecvData(uart_handle_);
         xSemaphoreTake(recv_buffer_mutex_, portMAX_DELAY);
         recv_buffer_.push(recv_data);
         xSemaphoreGive(recv_buffer_mutex_);

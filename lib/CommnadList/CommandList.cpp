@@ -1,5 +1,9 @@
 ﻿#include "CommandList.h"
 
+#ifdef _UNIT_TEST
+#include <gmock/gmock.h>
+#endif
+
 /******************************************************************************/
 /* CmdError *******************************************************************/
 /******************************************************************************/
@@ -10,7 +14,7 @@ CmdError::CmdError(ErrorType err_type)
 CmdError::~CmdError()
 {}
 
-bool CmdError::ExcuteCmd(std::vector<uint8_t> cmd_arg)
+bool CmdError::ExcuteCmd(const std::vector<uint8_t>& cmd_arg)
 {
     return false;
 }
@@ -24,19 +28,19 @@ std::vector<uint8_t> CmdError::CreateResponse()
 /******************************************************************************/
 /* CmdSetBobPower *************************************************************/
 /******************************************************************************/
-CmdSetBobPower::CmdSetBobPower(const std::shared_ptr<IExternalBoard> ex_board)
+CmdSetBobPower::CmdSetBobPower(IExternalBoard& ex_board)
 :   CommandBase(kCmdArgSize), ex_board_(ex_board)
 {}
 
 CmdSetBobPower::~CmdSetBobPower()
 {}
 
-bool CmdSetBobPower::ExcuteCmd(std::vector<uint8_t> cmd_arg)
+bool CmdSetBobPower::ExcuteCmd(const std::vector<uint8_t>& cmd_arg)
 {
     std::vector<uint8_t> response;
     
     /* コマンド送信 */
-    if(!ex_board_->SendCmd(BoardId::kBob, cmd_arg, &response))
+    if(!ex_board_.SendCmd(BoardId::kBob, cmd_arg, response))
     {
         return false;
     }
@@ -56,19 +60,19 @@ std::vector<uint8_t> CmdSetBobPower::CreateResponse()
 /******************************************************************************/
 /* CmdSetPrbPower *************************************************************/
 /******************************************************************************/
-CmdSetPrbPower::CmdSetPrbPower(const std::shared_ptr<IExternalBoard> ex_board)
+CmdSetPrbPower::CmdSetPrbPower(IExternalBoard& ex_board)
 :   CommandBase(kCmdArgSize), ex_board_(ex_board)
 {}
 
 CmdSetPrbPower::~CmdSetPrbPower()
 {}
 
-bool CmdSetPrbPower::ExcuteCmd(std::vector<uint8_t> cmd_arg)
+bool CmdSetPrbPower::ExcuteCmd(const std::vector<uint8_t>& cmd_arg)
 {
     std::vector<uint8_t> response;
     
     /* コマンド送信 */
-    if(!ex_board_->SendCmd(BoardId::kPrb, cmd_arg, &response))
+    if(!ex_board_.SendCmd(BoardId::kPrb, cmd_arg, response))
     {
         return false;
     }
@@ -94,7 +98,7 @@ CmdSetCommMonitor::CmdSetCommMonitor(IHeartBeat& heart_beat)
     response_.reserve(kResArgSize);
 }
 
-bool CmdSetCommMonitor::ExcuteCmd(const std::vector<uint8_t> cmd_msg)
+bool CmdSetCommMonitor::ExcuteCmd(const std::vector<uint8_t>& cmd_msg)
 {
     std::vector<uint8_t> cmd_arg {cmd_msg.begin() + 1, cmd_msg.end()};
     CmdField cmd_field;
@@ -111,25 +115,34 @@ bool CmdSetCommMonitor::ExcuteCmd(const std::vector<uint8_t> cmd_msg)
         heart_beat_.StartMonitoring();
     }
     
+    /* レスポンス作成 */
     ResField res_field;
-    res_field.res_arg_list.monitor_mode = heart_beat_.GetTimeout() ? 1 : 0;
+    
+    res_field.res_arg_list.monitor_mode 
+        = heart_beat_.IsMonitoringComm() ? 1 : 0;
+    
     res_field.res_arg_list.timeout = heart_beat_.GetTimeout();
 
     response_.clear();
-    response_.insert(   response_.begin(), 
+    response_.push_back(cmd_msg[0] + 1);
+    response_.insert(   response_.end(), 
                         res_field.res_arg_byte, 
                         res_field.res_arg_byte + kResArgSize);
 
     return true;
 }
 
+std::vector<uint8_t> CmdSetCommMonitor::CreateResponse()
+{
+    return response_;
+}
 
 /******************************************************************************/
 /* CmdControl *****************************************************************/
 /******************************************************************************/
 
-CmdControl::CmdControl( const std::shared_ptr<IThrusterMgr> thruster, 
-                        const std::shared_ptr<IExternalBoard> ex_board)
+CmdControl::CmdControl( IThrusterMgr& thruster, 
+                        IExternalBoard& ex_board)
 :   CommandBase(kCmdArgSize),  thruster_mgr_(thruster), ex_board_(ex_board)
 {
     response_.reserve(kResArgSize);
@@ -139,7 +152,7 @@ CmdControl::~CmdControl()
 {
 }
 
-bool CmdControl::ExcuteCmd(const std::vector<uint8_t> cmd_msg)
+bool CmdControl::ExcuteCmd(const std::vector<uint8_t>& cmd_msg)
 {
     /* 各引数に変換 */
     std::vector<uint8_t> cmd_arg {cmd_msg.begin() + 1, cmd_msg.end()};
@@ -155,7 +168,7 @@ bool CmdControl::ExcuteCmd(const std::vector<uint8_t> cmd_msg)
         std::end(cmd_field.cmd_arg_list.thruster_power));
 
     /* スラスタ値を出力 */
-    if(!thruster_mgr_->OperateThruster(thruster_power_vec))
+    if(!thruster_mgr_.OperateThruster(thruster_power_vec))
     {
         return false;
     }
@@ -168,7 +181,7 @@ bool CmdControl::ExcuteCmd(const std::vector<uint8_t> cmd_msg)
     std::vector<uint8_t> response;
 
 #ifndef _NONE_BOB    
-    if (!ex_board_->SendCmd(BoardId::kBob, send_cmd, &response))
+    if (!ex_board_.SendCmd(BoardId::kBob, send_cmd, response))
     {
         return false;
     }

@@ -31,12 +31,11 @@
 class ExUartCommunication
 :   public IUartCommunication, 
     public INotificationUartIrq,
-    public std::enable_shared_from_this<ExUartCommunication>,
     public TaskBase
 {
 public:
     
-    ExUartCommunication(std::shared_ptr<UartInterrupt>, UART_HandleTypeDef*);
+    ExUartCommunication(UartInterrupt&, UART_HandleTypeDef*);
     ~ExUartCommunication();
 
     void Init();
@@ -61,7 +60,7 @@ private:
 
 
     /* メンバ変数 */
-    std::shared_ptr<UartInterrupt> uart_interrupt_;
+    UartInterrupt& uart_interrupt_;
     UART_HandleTypeDef* const uart_handle_;     /* UARTハンドル       */
     
     uint8_t recv_data_;                         /* 受信データ         */
@@ -77,7 +76,7 @@ private:
     /* メンバ関数 */
     void PerformTask();
     void StoreUartData();
-    static void CallbackTaskFunc(std::shared_ptr<void>);
+    static void CallbackTaskFunc(void*);
     static void HandleUartCallback(UartInterrupt::CallbackInstance);
     void NotifyUartInterruptCallback();
 

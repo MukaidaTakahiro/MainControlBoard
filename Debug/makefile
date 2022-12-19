@@ -14,6 +14,7 @@ RM := rm -rf
 -include lib/Thruster/subdir.mk
 -include lib/TaskBase/subdir.mk
 -include lib/ResetIc/subdir.mk
+-include lib/Packet/subdir.mk
 -include lib/InternalCommunication/subdir.mk
 -include lib/InUartCommunication/subdir.mk
 -include lib/HeartBeat/subdir.mk

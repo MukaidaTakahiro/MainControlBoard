@@ -26,11 +26,11 @@
 class UartInterrupt
 {
 public:
-    using CallbackInstance = std::shared_ptr<void>;
+    using CallbackInstance = void*;
     using CallbackFunc = std::function<void(CallbackInstance)>;
     ~UartInterrupt();
     
-    static std::shared_ptr<UartInterrupt> GetInstance();
+    static UartInterrupt& GetInstance();
     
     bool RegistHandle(UART_HandleTypeDef*);
     uint8_t GetRecvData(UART_HandleTypeDef*);
@@ -46,10 +46,9 @@ private:
         StreamBufferHandle_t buffer_handle;
     };
 
-    static std::shared_ptr<UartInterrupt> uart_interrupt_;
+    static std::unique_ptr<UartInterrupt> uart_interrupt_;
     RecvInfo recv_info_list_[kUartMaxNum];
     uint16_t regist_num_;
-    
     
     UartInterrupt();
 };

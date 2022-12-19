@@ -14,7 +14,7 @@
 HeartBeat::HeartBeat(IResetIc& reset_ic)
 :   reset_ic_(reset_ic),
     is_monitoring_comm_(false),
-    shutdown_timeout_(UINT32_MAX)
+    shutdown_timeout_(UINT16_MAX)
 {
     /* タイマ―作成 */
     monitor_comm_timer_ = xTimerCreate(
@@ -80,13 +80,21 @@ bool HeartBeat::StopMonitoring()
  * @param shutdown_timeout 
  * @return bool 
  */
-bool HeartBeat::SetMonitoringTimeout(uint32_t shutdown_timeout)
+bool HeartBeat::SetMonitoringTimeout(const uint16_t shutdown_timeout)
 {
     xTimerStop(monitor_comm_timer_, 0);
 
+    /* 0の場合変更しない */
+    if (shutdown_timeout == 0)
+    {
+        return false;
+    }
+
     /* タイマー時間変更 */
     xTimerChangePeriod(monitor_comm_timer_,
-                        shutdown_timeout / portTICK_PERIOD_MS, 0);
+                        pdMS_TO_TICKS(shutdown_timeout), 0);
+
+    shutdown_timeout_ = shutdown_timeout;
 
     return true;
 }
@@ -98,7 +106,7 @@ bool HeartBeat::IsMonitoringComm()
 
 uint16_t HeartBeat::GetTimeout()
 {
-    return static_cast<uint16_t>(shutdown_timeout_ & 0x0000FFFF);
+    return shutdown_timeout_;
 }
 
 /* Private関数 ****************************************************************/
@@ -123,9 +131,9 @@ void HeartBeat::TimeoutCallback()
  * 
  * @param instance 
  */
-void HeartBeat::UartIrqCallbackEntry(std::shared_ptr<void> instance)
+void HeartBeat::UartIrqCallbackEntry(void* instance)
 {
-    std::static_pointer_cast<HeartBeat>(instance)->TimerReset();
+    reinterpret_cast<HeartBeat*>(instance)->TimerReset();
 }
 
 /**

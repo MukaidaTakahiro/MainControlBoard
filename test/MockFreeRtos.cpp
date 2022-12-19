@@ -2,7 +2,13 @@
 
 freertos::MockFreeRtos MockFreeRtosObj;
 
-TimerHandle_t xTimerCreate(const char * const pcTimerName,
+
+/******************************************************************************/
+/* タイマー関連 ***************************************************************/
+/******************************************************************************/
+
+
+TimerHandle_t xTimerCreate( const char * const pcTimerName,
                             const TickType_t xTimerPeriodInTicks,
                             const UBaseType_t uxAutoReload,
                             void * const pvTimerID,

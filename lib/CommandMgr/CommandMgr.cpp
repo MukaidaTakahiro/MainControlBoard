@@ -15,11 +15,11 @@ constexpr uint16_t CommandMgr::kPacketMaxByteSize;
 constexpr uint16_t CommandMgr::kUartBufferSize;
 constexpr uint16_t CommandMgr::kMsgBufferSize;
 
-CommandMgr::CommandMgr(	const std::shared_ptr<IExternalCommunication> ex_comm,
-                        const std::shared_ptr<IThrusterMgr> thruster,
-                        const std::shared_ptr<IExternalBoard> ex_board,
-                        const std::shared_ptr<IBmsMgr> bms_mgr,
-                        const std::shared_ptr<IHeartBeat> heart_beat)
+CommandMgr::CommandMgr(	IExternalCommunication& ex_comm,
+                        IThrusterMgr& thruster,
+                        IExternalBoard& ex_board,
+                        IBmsMgr& bms_mgr,
+                        IHeartBeat& heart_beat)
 :   ex_comm_(ex_comm), 
     thruster_mgr_(thruster), 
     ex_board_(ex_board), 
@@ -30,18 +30,13 @@ CommandMgr::CommandMgr(	const std::shared_ptr<IExternalCommunication> ex_comm,
 
 CommandMgr::~CommandMgr()
 {
-
 }
 
 bool CommandMgr::Init()
 {
     bool result;
-    if (ex_comm_ == nullptr)
-    {
-        return false;
-    }
 
-    result = ex_comm_->RegistNotifyCallback(shared_from_this(), 
+    result = ex_comm_.RegistNotifyCallback(this, 
                                             DetectRecvCmdEntryFunc,
                                             DetectPacketSyntaxErrEntryFunc,
                                             DetectCheckSumErrEntryFunc);
@@ -56,10 +51,10 @@ bool CommandMgr::Init()
  * @param callback_instance 呼ばれるインスタンス
  * @param cmd_msg           取得したコマンド
  */
-void CommandMgr::DetectRecvCmdEntryFunc(std::shared_ptr<void> callback_instance, 
-                                        std::vector<uint8_t> cmd_msg)
+void CommandMgr::DetectRecvCmdEntryFunc(void* callback_instance, 
+                                        const std::vector<uint8_t>& cmd_msg)
 {
-    std::static_pointer_cast<CommandMgr>(callback_instance)->ParseCmd(cmd_msg);
+    reinterpret_cast<CommandMgr*>(callback_instance)->ParseCmd(cmd_msg);
 }
 
 /**
@@ -68,7 +63,7 @@ void CommandMgr::DetectRecvCmdEntryFunc(std::shared_ptr<void> callback_instance,
  * @param cmd_msg 取得したコマンド
  * @return bool 
  */
-bool CommandMgr::ParseCmd(const std::vector<uint8_t> cmd_msg)
+bool CommandMgr::ParseCmd(const std::vector<uint8_t>& cmd_msg)
 {
     uint8_t cmd_value = cmd_msg.front();
     auto cmd = MakeCmdInstance(cmd_value);
@@ -78,14 +73,14 @@ bool CommandMgr::ParseCmd(const std::vector<uint8_t> cmd_msg)
         IssueUndefinedCmdErr();
         return false;
     }
-
+    
     /* コマンド長チェック */
     if (!cmd->CheckCmdLen(cmd_msg.size() - 1))
     {
         IssueCmdSyntaxErr();
         return false;
     }
-
+    
     /* 命令実行 */
     if (!cmd->ExcuteCmd(cmd_msg))
     {
@@ -106,7 +101,7 @@ bool CommandMgr::ParseCmd(const std::vector<uint8_t> cmd_msg)
 
     
     /* 応答コマンド送信 */
-    ex_comm_->SendCmdPacket(res_msg);
+    ex_comm_.SendCmdPacket(res_msg);
     
     return true;
 }
@@ -117,9 +112,9 @@ bool CommandMgr::ParseCmd(const std::vector<uint8_t> cmd_msg)
  * @param callback_instance 
  */
 void CommandMgr::DetectPacketSyntaxErrEntryFunc(
-                    std::shared_ptr<void> callback_instance)
+                    void* callback_instance)
 {
-    std::static_pointer_cast<CommandMgr>(callback_instance)
+    reinterpret_cast<CommandMgr*>(callback_instance)
                                                     ->IssuePacketSyntaxErr();
 }
 
@@ -137,7 +132,7 @@ bool CommandMgr::IssuePacketSyntaxErr()
     res_msg = err_cmd.CreateResponse();
     res_msg.insert(res_msg.begin(), kCmdError);
 
-    return ex_comm_->SendCmdPacket(res_msg);
+    return ex_comm_.SendCmdPacket(res_msg);
 }
 
 
@@ -146,10 +141,9 @@ bool CommandMgr::IssuePacketSyntaxErr()
  * 
  * @param callback_instance 
  */
-void CommandMgr::DetectCheckSumErrEntryFunc(
-                    std::shared_ptr<void> callback_instance)
+void CommandMgr::DetectCheckSumErrEntryFunc(void* callback_instance)
 {
-    std::static_pointer_cast<CommandMgr>(callback_instance)->IssueCheckSumErr();
+    reinterpret_cast<CommandMgr*>(callback_instance)->IssueCheckSumErr();
 }
 
 
@@ -166,7 +160,7 @@ bool CommandMgr::IssueCheckSumErr()
     res_msg = err_cmd.CreateResponse();
     res_msg.insert(res_msg.begin(), kCmdError);
 
-    return ex_comm_->SendCmdPacket(res_msg);
+    return ex_comm_.SendCmdPacket(res_msg);
 }
 
 /**
@@ -182,21 +176,30 @@ bool CommandMgr::IssueUndefinedCmdErr()
     res_msg = err_cmd.CreateResponse();
     res_msg.insert(res_msg.begin(), kCmdError);
 
-    return ex_comm_->SendCmdPacket(res_msg);
+    return ex_comm_.SendCmdPacket(res_msg);
 }
 
+/**
+ * @brief コマンド構文エラー発報
+ * 
+ * @return bool 送信成否
+ */
 bool CommandMgr::IssueCmdSyntaxErr()
 {    
     std::vector<uint8_t> res_msg;
     CmdError err_cmd(CmdError::ErrorType::kCommandSyntaxError);
     
-    std::vector<uint8_t> aaa;
     res_msg = err_cmd.CreateResponse();
     res_msg.insert(res_msg.begin(), kCmdError);
     
-    return ex_comm_->SendCmdPacket(res_msg);
+    return ex_comm_.SendCmdPacket(res_msg);
 }
 
+/**
+ * @brief システムエラー発報
+ * 
+ * @return bool 送信成否
+ */
 bool CommandMgr::IssueSystemErr()
 {
     std::vector<uint8_t> res_msg;
@@ -205,24 +208,35 @@ bool CommandMgr::IssueSystemErr()
     res_msg = err_cmd.CreateResponse();
     res_msg.insert(res_msg.begin(), kCmdError);
 
-    return ex_comm_->SendCmdPacket(res_msg);
+    return ex_comm_.SendCmdPacket(res_msg);
 }
 
-std::shared_ptr<CommandBase> CommandMgr::MakeCmdInstance(uint8_t cmd_value)
+/**
+ * @brief コマンドインスタンス生成
+ * 
+ * @param cmd_value コマンド値
+ * @return std::unique_ptr<CommandBase> 
+ */
+std::unique_ptr<CommandBase> 
+    CommandMgr::MakeCmdInstance(const uint8_t cmd_value)
 {
-    std::shared_ptr<CommandBase> instance = nullptr;
+    std::unique_ptr<CommandBase> instance = nullptr;
 
     switch (cmd_value)
     {
     case kCmdSetPrbPower:
-        instance = std::make_shared<CmdSetPrbPower>(ex_board_);
+        instance = std::make_unique<CmdSetPrbPower>(ex_board_);
+        break;
+
+    case kCmdSetCommMonitor:
+        instance = std::make_unique<CmdSetCommMonitor>(heart_beat_);
         break;
 
     case kCmdControl:
-        instance = std::make_shared<CmdControl>(thruster_mgr_, ex_board_);
+        instance = std::make_unique<CmdControl>(thruster_mgr_, ex_board_);
         break;
     
     }
 
-    return instance;
+    return std::move(instance);
 }

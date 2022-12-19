@@ -5,7 +5,8 @@ void DebugLedBlue(uint16_t);
 void DebugLedRB(uint16_t);
 
 MainRoutine::MainRoutine()
-:	TaskBase("MainRoutine", 1, 256)
+:	TaskBase("MainRoutine", 1, 256), 
+    uart_interrupt_(UartInterrupt::GetInstance())
 {
 }
 
@@ -17,21 +18,29 @@ void MainRoutine::Init()
 {
 	
 	uart_interrupt_ = UartInterrupt::GetInstance();
-    
-    prb_uart_comm_ = std::make_shared<InUartCommunication>(uart_interrupt_, &huart3);
-    prb_uart_comm_->Init();
 
-    ex_uart_comm_ = std::make_shared<ExUartCommunication>(uart_interrupt_, &huart1);
+    ex_uart_comm_ = std::make_unique<ExUartCommunication>(uart_interrupt_, &huart1);
     ex_uart_comm_->Init();
 
+    
+    bob_uart_comm_ = std::make_unique<InUartCommunication>(uart_interrupt_, &huart4);
+    bob_uart_comm_->Init();
+    prb_uart_comm_ = std::make_unique<InUartCommunication>(uart_interrupt_, &huart3);
+    prb_uart_comm_->Init();
+    eob_uart_comm_ = std::make_unique<InUartCommunication>(uart_interrupt_, &huart5);
+    eob_uart_comm_->Init();
 
 
-    ex_comm_ = std::make_shared<ExternalCommunication>(ex_uart_comm_);
+    ex_comm_ = std::make_unique<ExternalCommunication>(*ex_uart_comm_);
     ex_comm_->Init();
 
-    prb_comm_ = std::make_shared<InternalCommunication>(prb_uart_comm_);
+    bob_comm_ = std::make_unique<InternalCommunication>(*bob_uart_comm_);
+    prb_comm_ = std::make_unique<InternalCommunication>(*prb_uart_comm_);
+    eob_comm_ = std::make_unique<InternalCommunication>(*eob_uart_comm_);
 
-    ex_board_ = std::make_shared<ExternalBoard>(nullptr, prb_comm_, nullptr);
+    ex_board_ = std::make_unique<ExternalBoard>(*bob_comm_, 
+                                                *prb_comm_, 
+                                                *eob_comm_);
 
     /* スラスタ設定 */
     thruster_0_ = std::make_unique<Thruster>(&htim3, TIM_CHANNEL_1);
@@ -51,17 +60,22 @@ void MainRoutine::Init()
                                                     std::move(thruster_5_),
                                                     std::move(thruster_6_),
                                                     std::move(thruster_7_));
+
+    bms_mgr_ = std::make_unique<BmsMgr>(nullptr);
+    reset_ic_ = std::make_unique<ResetIc>(WD_GPIO_Port, WD_Pin);
+    heart_beat_ = std::make_unique<HeartBeat>(*reset_ic_);
+    heart_beat_->Init(*ex_uart_comm_);
     
 
-    cmd_mgr_ = std::make_shared<CommandMgr>(ex_comm_, 
-                                            std::move(thruster_mgr_), 
-                                            ex_board_, 
-                                            nullptr, 
-                                            nullptr);
+    cmd_mgr_ = std::make_unique<CommandMgr>(*ex_comm_, 
+                                            *thruster_mgr_, 
+                                            *ex_board_, 
+                                            *bms_mgr_, 
+                                            *heart_beat_);
 
     cmd_mgr_->Init();
 
-    uart_interrupt_->Init();
+    uart_interrupt_.Init();
 
     CreateTask();
 }
@@ -81,7 +95,8 @@ void MainRoutine::LedBeatRtn()
 {
     while (1)
     {
-        DebugLedBlue(500);
+        DebugLedBlue(1000);
+        //reset_ic_->ShutdownSystem();
     }
     
 }

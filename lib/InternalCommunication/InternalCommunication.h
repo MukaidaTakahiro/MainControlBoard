@@ -18,11 +18,11 @@ class InternalCommunication
 public:
 
 
-    InternalCommunication(std::shared_ptr<IUartCommunication>);
+    InternalCommunication(IUartCommunication&);
     ~InternalCommunication();
 
     virtual bool SendInCmdPacket(   const std::vector<uint8_t>,
-                                    std::vector<uint8_t>*);
+                                    std::vector<uint8_t>&);
 
 private:
 
@@ -54,7 +54,7 @@ private:
     
 
     /* 変数宣言 */
-    std::shared_ptr<IUartCommunication> uart_comm_;
+    IUartCommunication& uart_comm_;
 
 
     /* 関数宣言 */
@@ -62,7 +62,7 @@ private:
     std::vector<uint8_t> GetPacket();
     std::vector<uint8_t> MakePacket(const std::vector<uint8_t>);
     uint8_t AddCheckSum(const uint8_t, const uint8_t);
-    bool ReceiveResponse(std::vector<uint8_t>*);
+    bool ReceiveResponse(std::vector<uint8_t>&);
     uint8_t CalcChecksum(const std::vector<uint8_t>);
 
 };

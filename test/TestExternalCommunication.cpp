@@ -17,23 +17,23 @@ using ::testing::Return;
 
 extern freertos::MockFreeRtos MockFreeRtosObj;
 
-void CallPerformTask(std::shared_ptr<ExternalCommunication> ex_comm)
+void CallPerformTask(ExternalCommunication& ex_comm)
 {
-    ex_comm->ParsePacket();
+    ex_comm.ParsePacket();
 }
 
 class ExternalCommunicationTestFixture: public::testing::Test
 {
 protected:
-    std::shared_ptr<ExternalCommunication> ex_comm_;
-    std::shared_ptr<MockUartCommunication> uart_comm_;
-    std::shared_ptr<MockCommandMgr> cmd_mgr_;
+    std::unique_ptr<ExternalCommunication> ex_comm_;
+    std::unique_ptr<MockUartCommunication> uart_comm_;
+    std::unique_ptr<MockCommandMgr> cmd_mgr_;
 
     virtual void SetUp()
     {
-        uart_comm_ = std::make_shared<MockUartCommunication>();
-        ex_comm_ = std::make_shared<ExternalCommunication>(uart_comm_);
-        cmd_mgr_ = std::make_shared<MockCommandMgr>(ex_comm_);
+        uart_comm_ = std::make_unique<MockUartCommunication>();
+        ex_comm_   = std::make_unique<ExternalCommunication>(*uart_comm_);
+        cmd_mgr_   = std::make_unique<MockCommandMgr>(*ex_comm_);
 
         EXPECT_CALL(MockFreeRtosObj, xTaskCreate(_, _, _, _, _, _))
             .Times(1);
@@ -59,18 +59,25 @@ TEST_F(ExternalCommunicationTestFixture, ParsePacket_2)
 
 
     ex_comm_->RegistNotifyCallback(
-        cmd_mgr_,
+        cmd_mgr_.get(),
         MockCommandMgr::DetectRecvCmdEntryFunc,
         MockCommandMgr::DetectPacketSyntaxErrEntryFunc,
         MockCommandMgr::DetectCheckSumErrEntryFunc);
     EXPECT_CALL(*uart_comm_, WaitReceiveData(portMAX_DELAY))
-        .Times(msg.size());
+        .Times(1);
     EXPECT_CALL(*cmd_mgr_, ParseCmd(recv_cmd))
         .Times(1);
     EXPECT_CALL(*cmd_mgr_, IssuePacketSyntaxErr())
         .Times(0);
     EXPECT_CALL(*cmd_mgr_, IssueCheckSumErr())
         .Times(0);
+    
+    EXPECT_CALL(*uart_comm_, IsUartEmpty())
+        .WillRepeatedly(Return(true));
+    EXPECT_CALL(*uart_comm_, IsUartEmpty())
+        .Times(msg.size())
+        .WillRepeatedly(Return(false))
+        .RetiresOnSaturation();
 
     EXPECT_CALL(*uart_comm_, ReadByte())
         .Times(msg.size())
@@ -80,10 +87,7 @@ TEST_F(ExternalCommunicationTestFixture, ParsePacket_2)
         .WillOnce(Return(msg[cnt++]))
         .WillOnce(Return(msg[cnt++]));
 
-    for (uint16_t i = 0; i < msg.size(); i++)
-    {
-        CallPerformTask(ex_comm_);
-    }
+    CallPerformTask(*ex_comm_);
     
 }
 
@@ -111,13 +115,13 @@ TEST_F(ExternalCommunicationTestFixture, ParsePacket_3)
     msg.push_back(msg[2] - 1);
 
     ex_comm_->RegistNotifyCallback(
-        cmd_mgr_,
+        cmd_mgr_.get(),
         MockCommandMgr::DetectRecvCmdEntryFunc,
         MockCommandMgr::DetectPacketSyntaxErrEntryFunc,
         MockCommandMgr::DetectCheckSumErrEntryFunc);
 
     EXPECT_CALL(*uart_comm_, WaitReceiveData(portMAX_DELAY))
-        .Times(msg.size());
+        .Times(1);
 
     for (int16_t i = msg.size() - 1; i >= 0; i--)
     {
@@ -126,6 +130,13 @@ TEST_F(ExternalCommunicationTestFixture, ParsePacket_3)
             .RetiresOnSaturation();
     }
 
+    EXPECT_CALL(*uart_comm_, IsUartEmpty())
+        .WillRepeatedly(Return(true));
+    EXPECT_CALL(*uart_comm_, IsUartEmpty())
+        .Times(msg.size())
+        .WillRepeatedly(Return(false))
+        .RetiresOnSaturation();
+
     EXPECT_CALL(*cmd_mgr_, ParseCmd(recv_cmd))
         .Times(1);
     EXPECT_CALL(*cmd_mgr_, IssuePacketSyntaxErr())
@@ -133,10 +144,7 @@ TEST_F(ExternalCommunicationTestFixture, ParsePacket_3)
     EXPECT_CALL(*cmd_mgr_, IssueCheckSumErr())
         .Times(0);
 
-    for (uint16_t i = 0; i < msg.size(); i++)
-    {
-        CallPerformTask(ex_comm_);
-    }
+    CallPerformTask(*ex_comm_);
     
 }
 
@@ -158,13 +166,21 @@ TEST_F(ExternalCommunicationTestFixture, ParsePacket_4)
     msg.push_back(msg[2] - 1);
 
     ex_comm_->RegistNotifyCallback(
-        cmd_mgr_,
+        cmd_mgr_.get(),
         MockCommandMgr::DetectRecvCmdEntryFunc,
         MockCommandMgr::DetectPacketSyntaxErrEntryFunc,
         MockCommandMgr::DetectCheckSumErrEntryFunc);
 
     EXPECT_CALL(*uart_comm_, WaitReceiveData(portMAX_DELAY))
-        .Times(msg.size());
+        .Times(1);
+
+    EXPECT_CALL(*uart_comm_, IsUartEmpty())
+        .WillRepeatedly(Return(true));
+    EXPECT_CALL(*uart_comm_, IsUartEmpty())
+        .Times(msg.size())
+        .WillRepeatedly(Return(false))
+        .RetiresOnSaturation();
+    
     EXPECT_CALL(*cmd_mgr_, ParseCmd(expect_cmd))
         .Times(1);
     EXPECT_CALL(*cmd_mgr_, IssuePacketSyntaxErr())
@@ -179,10 +195,7 @@ TEST_F(ExternalCommunicationTestFixture, ParsePacket_4)
             .RetiresOnSaturation();
     }
 
-    for (uint16_t i = 0; i < msg.size(); i++)
-    {
-        CallPerformTask(ex_comm_);
-    }
+        CallPerformTask(*ex_comm_);
 }
 
 /**
@@ -211,13 +224,13 @@ TEST_F(ExternalCommunicationTestFixture, ParsePacket_5)
     msg.push_back(msg[2] - 1);
 
     ex_comm_->RegistNotifyCallback(
-        cmd_mgr_,
+        cmd_mgr_.get(),
         MockCommandMgr::DetectRecvCmdEntryFunc,
         MockCommandMgr::DetectPacketSyntaxErrEntryFunc,
         MockCommandMgr::DetectCheckSumErrEntryFunc);
 
     EXPECT_CALL(*uart_comm_, WaitReceiveData(portMAX_DELAY))
-        .Times(msg.size());
+        .Times(1);
 
     for (int16_t i = msg.size() - 1; i >= 0; i--)
     {
@@ -226,6 +239,13 @@ TEST_F(ExternalCommunicationTestFixture, ParsePacket_5)
             .RetiresOnSaturation();
     }
 
+    EXPECT_CALL(*uart_comm_, IsUartEmpty())
+        .WillRepeatedly(Return(true));
+    EXPECT_CALL(*uart_comm_, IsUartEmpty())
+        .Times(msg.size())
+        .WillRepeatedly(Return(false))
+        .RetiresOnSaturation();
+
     EXPECT_CALL(*cmd_mgr_, ParseCmd(_))
         .Times(0);
     EXPECT_CALL(*cmd_mgr_, IssuePacketSyntaxErr())
@@ -233,10 +253,7 @@ TEST_F(ExternalCommunicationTestFixture, ParsePacket_5)
     EXPECT_CALL(*cmd_mgr_, IssueCheckSumErr())
         .Times(0);
 
-    for (uint16_t i = 0; i < msg.size(); i++)
-    {
-        CallPerformTask(ex_comm_);
-    }
+        CallPerformTask(*ex_comm_);
 }
 
 /**
@@ -265,13 +282,13 @@ TEST_F(ExternalCommunicationTestFixture, ParsePacket_6)
     msg.push_back(msg[2] - 2); /* チェックサムを間違えさせる */
 
     ex_comm_->RegistNotifyCallback(
-        cmd_mgr_,
+        cmd_mgr_.get(),
         MockCommandMgr::DetectRecvCmdEntryFunc,
         MockCommandMgr::DetectPacketSyntaxErrEntryFunc,
         MockCommandMgr::DetectCheckSumErrEntryFunc);
 
     EXPECT_CALL(*uart_comm_, WaitReceiveData(portMAX_DELAY))
-        .Times(msg.size());
+        .Times(1);
 
     for (int16_t i = msg.size() - 1; i >= 0; i--)
     {
@@ -280,6 +297,13 @@ TEST_F(ExternalCommunicationTestFixture, ParsePacket_6)
             .RetiresOnSaturation();
     }
 
+    EXPECT_CALL(*uart_comm_, IsUartEmpty())
+        .WillRepeatedly(Return(true));
+    EXPECT_CALL(*uart_comm_, IsUartEmpty())
+        .Times(msg.size())
+        .WillRepeatedly(Return(false))
+        .RetiresOnSaturation();
+    
     EXPECT_CALL(*cmd_mgr_, ParseCmd(_))
         .Times(0);
     EXPECT_CALL(*cmd_mgr_, IssuePacketSyntaxErr())
@@ -287,10 +311,7 @@ TEST_F(ExternalCommunicationTestFixture, ParsePacket_6)
     EXPECT_CALL(*cmd_mgr_, IssueCheckSumErr())
         .Times(1);
 
-    for (uint16_t i = 0; i < msg.size(); i++)
-    {
-        CallPerformTask(ex_comm_);
-    }
+        CallPerformTask(*ex_comm_);
 }
 
 /**
@@ -316,13 +337,13 @@ TEST_F(ExternalCommunicationTestFixture, ParsePacket_7)
     msg.push_back(msg[5] - 1);
 
     ex_comm_->RegistNotifyCallback(
-        cmd_mgr_,
+        cmd_mgr_.get(),
         MockCommandMgr::DetectRecvCmdEntryFunc,
         MockCommandMgr::DetectPacketSyntaxErrEntryFunc,
         MockCommandMgr::DetectCheckSumErrEntryFunc);
 
     EXPECT_CALL(*uart_comm_, WaitReceiveData(portMAX_DELAY))
-        .Times(msg.size());
+        .Times(1);
 
     for (int16_t i = msg.size() - 1; i >= 0; i--)
     {
@@ -331,6 +352,13 @@ TEST_F(ExternalCommunicationTestFixture, ParsePacket_7)
             .RetiresOnSaturation();
     }
 
+    EXPECT_CALL(*uart_comm_, IsUartEmpty())
+        .WillRepeatedly(Return(true));
+    EXPECT_CALL(*uart_comm_, IsUartEmpty())
+        .Times(msg.size())
+        .WillRepeatedly(Return(false))
+        .RetiresOnSaturation();
+
     EXPECT_CALL(*cmd_mgr_, ParseCmd(recv_cmd))
         .Times(1);
     EXPECT_CALL(*cmd_mgr_, IssuePacketSyntaxErr())
@@ -338,10 +366,7 @@ TEST_F(ExternalCommunicationTestFixture, ParsePacket_7)
     EXPECT_CALL(*cmd_mgr_, IssueCheckSumErr())
         .Times(0);
 
-    for (uint16_t i = 0; i < msg.size(); i++)
-    {
-        CallPerformTask(ex_comm_);
-    }
+        CallPerformTask(*ex_comm_);
 }
 
 /**
@@ -370,13 +395,13 @@ TEST_F(ExternalCommunicationTestFixture, ParsePacket_8)
     msg.insert(msg.begin(), invalid_msg.begin(), invalid_msg.end());
     
     ex_comm_->RegistNotifyCallback(
-        cmd_mgr_,
+        cmd_mgr_.get(),
         MockCommandMgr::DetectRecvCmdEntryFunc,
         MockCommandMgr::DetectPacketSyntaxErrEntryFunc,
         MockCommandMgr::DetectCheckSumErrEntryFunc);
         
     EXPECT_CALL(*uart_comm_, WaitReceiveData(portMAX_DELAY))
-        .Times(msg.size());
+        .Times(1);
 
     for (int16_t i = msg.size() - 1; i >= 0; i--)
     {
@@ -385,6 +410,13 @@ TEST_F(ExternalCommunicationTestFixture, ParsePacket_8)
             .RetiresOnSaturation();
     }
 
+    EXPECT_CALL(*uart_comm_, IsUartEmpty())
+        .WillRepeatedly(Return(true));
+    EXPECT_CALL(*uart_comm_, IsUartEmpty())
+        .Times(msg.size())
+        .WillRepeatedly(Return(false))
+        .RetiresOnSaturation();
+
     EXPECT_CALL(*cmd_mgr_, ParseCmd(expect_cmd))
         .Times(1);
     EXPECT_CALL(*cmd_mgr_, IssuePacketSyntaxErr())
@@ -392,10 +424,7 @@ TEST_F(ExternalCommunicationTestFixture, ParsePacket_8)
     EXPECT_CALL(*cmd_mgr_, IssueCheckSumErr())
         .Times(0);
 
-    for (uint16_t i = 0; i < msg.size(); i++)
-    {
-        CallPerformTask(ex_comm_);
-    }
+    CallPerformTask(*ex_comm_);
 }
 
 /******************************************************************************/

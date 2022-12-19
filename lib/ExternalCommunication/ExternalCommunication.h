@@ -26,12 +26,12 @@ class ExternalCommunication
 {
 public:
 
-    ExternalCommunication(std::shared_ptr<IUartCommunication>);
+    ExternalCommunication(IUartCommunication&);
     virtual ~ExternalCommunication();
 
     bool Init();
 
-    bool RegistNotifyCallback(  std::shared_ptr<void>, 
+    bool RegistNotifyCallback(  void*, 
                                 NotifyRecvCmdCallbackEntry,
                                 NotifyPacketSyntaxErrCallbackEntry,
                                 NotifyChecksumErrCallbackEntry);
@@ -77,9 +77,9 @@ private:
 
     /* メンバ変数宣言 */
                         /* UART通信クラス                                     */
-    std::shared_ptr<IUartCommunication> uart_comm_;
+    IUartCommunication& uart_comm_;
                         /* コールバック関数のインスタンス                     */
-    std::shared_ptr<void> callback_instance_;
+    void* callback_instance_;
                         /* コマンド取得時のコールバック関数ポインタ           */
     NotifyRecvCmdCallbackEntry notify_recv_cmd_;
                         /* パケット構文エラー通知のコールバック関数ポインタ   */
@@ -98,7 +98,7 @@ private:
 
 #ifdef _UNIT_TEST
 public:
-    friend void CallPerformTask(std::shared_ptr<ExternalCommunication>);
+    friend void CallPerformTask(ExternalCommunication&);
 #endif /* _UNIT_TEST */
 };
 

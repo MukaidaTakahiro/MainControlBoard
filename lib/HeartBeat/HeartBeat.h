@@ -29,19 +29,19 @@ public:
     virtual void Init(INotificationUartIrq&);
     virtual bool StartMonitoring();
     virtual bool StopMonitoring();
-    virtual bool SetMonitoringTimeout(uint32_t);
+    virtual bool SetMonitoringTimeout(uint16_t);
     virtual bool IsMonitoringComm();
     virtual uint16_t GetTimeout();
 private:
     IResetIc& reset_ic_;
     bool is_monitoring_comm_;
-    uint32_t shutdown_timeout_;
+    uint16_t shutdown_timeout_;
     TimerHandle_t monitor_comm_timer_;
 
     static void TimeoutCallbackEntry(TimerHandle_t);
     void TimeoutCallback();
 
-    static void UartIrqCallbackEntry(std::shared_ptr<void>);
+    static void UartIrqCallbackEntry(void*);
     void TimerReset();
 };
 

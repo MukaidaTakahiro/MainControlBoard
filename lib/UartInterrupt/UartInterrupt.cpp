@@ -1,6 +1,6 @@
 ﻿#include "UartInterrupt.h"
 
-std::shared_ptr<UartInterrupt> UartInterrupt::uart_interrupt_ = nullptr;
+std::unique_ptr<UartInterrupt> UartInterrupt::uart_interrupt_ = nullptr;
 
 UartInterrupt::UartInterrupt()
 :   regist_num_(0)
@@ -11,13 +11,13 @@ UartInterrupt::~UartInterrupt()
 {
 }
 
-std::shared_ptr<UartInterrupt> UartInterrupt::GetInstance()
+UartInterrupt& UartInterrupt::GetInstance()
 {
-    if (!uart_interrupt_)
+    if (uart_interrupt_ == nullptr)
     {
-        uart_interrupt_ = std::shared_ptr<UartInterrupt>(new UartInterrupt());
+        uart_interrupt_ = std::unique_ptr<UartInterrupt>(new UartInterrupt());
     }
-    return uart_interrupt_;
+    return *uart_interrupt_;
 }
 
 bool UartInterrupt::RegistHandle( UART_HandleTypeDef* huart)
@@ -81,12 +81,6 @@ inline bool UartInterrupt::ExcuteRxCpltCallback(UART_HandleTypeDef* huart)
 
     for (uint16_t i = 0; i < regist_num_; i++)
     {
-        if (i == 1)
-        {
-            uint16_t a;
-            a = 1;
-        }
-
         if (huart == recv_info_list_[i].huart)
         {
             recv_info = &recv_info_list_[i];
@@ -123,7 +117,7 @@ inline bool UartInterrupt::ExcuteRxCpltCallback(UART_HandleTypeDef* huart)
 /* Uart割込みの実装(クラス定義ではない) ***************************************/
 /******************************************************************************/
 
-static std::shared_ptr<UartInterrupt> uart_interrupt = UartInterrupt::GetInstance();
+static UartInterrupt& uart_interrupt = UartInterrupt::GetInstance();
 
 /**
  * @brief 
@@ -133,7 +127,7 @@ static std::shared_ptr<UartInterrupt> uart_interrupt = UartInterrupt::GetInstanc
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
     //HAL_GPIO_WritePin(LED3_GPIO_Port, LED3_Pin, GPIO_PIN_SET);
-    uart_interrupt->ExcuteRxCpltCallback(huart);
+    uart_interrupt.ExcuteRxCpltCallback(huart);
     //HAL_GPIO_WritePin(LED3_GPIO_Port, LED3_Pin, GPIO_PIN_RESET);
 }
 

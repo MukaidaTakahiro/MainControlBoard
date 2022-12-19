@@ -1,6 +1,7 @@
 ﻿#include "gtest/gtest.h"
 #include <gmock/gmock.h>
 #include <memory>
+#include <functional>
 #include <MockFreeRtos.h>
 
 #include "HeartBeat.h"
@@ -19,23 +20,41 @@ using ::testing::SaveArg;
 using ::testing::SaveArgPointee;
 using ::testing::DoAll;
 
+
 extern freertos::MockFreeRtos MockFreeRtosObj;
+
 
 class HeartBeatTestFixture: public::testing::Test
 {
 protected:
-    std::shared_ptr<HeartBeat> heart_beat_;
-    std::shared_ptr<MockNotificationUartIrq> uart_irq_;
-    std::shared_ptr<MockResetIc> reset_ic_;
+    std::unique_ptr<HeartBeat> heart_beat_;
+    std::unique_ptr<MockNotificationUartIrq> uart_irq_;
+    std::unique_ptr<MockResetIc> reset_ic_;
+    TimerHandle_t timer_ = {0};
+    void* timeout_callback_instance_;
+    TimerCallbackFunction_t timeout_callback_func_;
+    void* heartbeat_callback_instance_;
+    INotificationUartIrq::NotifyHeartBeatCallback heartbeat_callback_func_;
 
     virtual void SetUp()
     {
         EXPECT_CALL(MockFreeRtosObj,xTimerCreate(_,_,pdFALSE,_,_))
-        .Times(1);
+            .Times(1)
+            .WillOnce(DoAll(SaveArg<3>(&timeout_callback_instance_), 
+                            SaveArgPointee<4>(&timeout_callback_func_),
+                            Return(timer_)));
 
-        uart_irq_ = std::make_shared<MockNotificationUartIrq>();
-        reset_ic_ = std::make_shared<MockResetIc>();
-        heart_beat_ = std::make_shared<HeartBeat>(uart_irq_, reset_ic_);
+        uart_irq_ = std::make_unique<MockNotificationUartIrq>();
+        reset_ic_ = std::make_unique<MockResetIc>();
+        heart_beat_ = std::make_unique<HeartBeat>(*reset_ic_);
+
+        EXPECT_CALL(*uart_irq_, RegistNotifyHeartBeatCallback(_, _))
+            .Times(1)
+            .WillOnce(DoAll(SaveArg<0>(&heartbeat_callback_instance_),
+                            SaveArg<1>(&heartbeat_callback_func_),
+                            Return(true)));
+
+        heart_beat_->Init(*uart_irq_);
     }
 
     virtual void TearDown()
@@ -46,11 +65,11 @@ protected:
 TEST(HeartBeat, Constructor_1)
 {
     EXPECT_CALL(MockFreeRtosObj,xTimerCreate(_,_,pdFALSE,_,_))
-    .Times(1);
+        .Times(1);
 
-    auto uart_irq_ = std::make_shared<MockNotificationUartIrq>();
-    auto reset_ic_ = std::make_shared<MockResetIc>();
-    auto heart_beat_ = std::make_shared<HeartBeat>(uart_irq_, reset_ic_);
+    auto uart_irq_ = std::make_unique<MockNotificationUartIrq>();
+    auto reset_ic_ = std::make_unique<MockResetIc>();
+    auto heart_beat_ = std::make_unique<HeartBeat>(*reset_ic_);
 }
 
 /**
@@ -61,16 +80,13 @@ TEST_F(HeartBeatTestFixture, StartMonitoring_1)
 {
     const TickType_t test_val = 5;
 
-    EXPECT_CALL(*uart_irq_, RegistNotifyHeartBeatCallback(_, _))
-    .Times(1);
-
     EXPECT_CALL(MockFreeRtosObj, xTaskGetTickCount())
-    .Times(1)
-    .WillRepeatedly(Return(test_val));
+        .Times(1)
+        .WillRepeatedly(Return(test_val));
 
     EXPECT_CALL(MockFreeRtosObj, 
                 xTimerGenericCommand(_, tmrCOMMAND_START, test_val, NULL, 0))
-    .Times(1);
+        .Times(1);
 
     EXPECT_TRUE(heart_beat_->StartMonitoring());
 }
@@ -83,12 +99,9 @@ TEST_F(HeartBeatTestFixture, StartMonitoring_2)
 {
     const TickType_t test_val = 5;
 
-    EXPECT_CALL(*uart_irq_, RegistNotifyHeartBeatCallback(_, _))
-    .Times(1);
-
     EXPECT_CALL(MockFreeRtosObj, xTaskGetTickCount())
-    .Times(1)
-    .WillRepeatedly(Return(test_val));
+        .Times(1)
+        .WillRepeatedly(Return(test_val));
 
     EXPECT_CALL(MockFreeRtosObj, 
                 xTimerGenericCommand(_, tmrCOMMAND_START, test_val, NULL, 0))
@@ -98,19 +111,6 @@ TEST_F(HeartBeatTestFixture, StartMonitoring_2)
     EXPECT_FALSE(heart_beat_->StartMonitoring());
 }
 
-/**
- * @brief タイマースタート UART割込み登録失敗
- * 
- */
-TEST(HeartBeat, StartMonitoring_3)
-{
-    EXPECT_CALL(MockFreeRtosObj,xTimerCreate(_,_,pdFALSE,_,_))
-    .Times(1);
-
-    auto heart_beat_ = std::make_shared<HeartBeat>(nullptr, nullptr);
-
-    EXPECT_FALSE(heart_beat_->StartMonitoring());
-}
 
 /**
  * @brief タイマーストップ 
@@ -120,13 +120,13 @@ TEST_F(HeartBeatTestFixture, StopMonitoring_1)
 {
 
     EXPECT_CALL(MockFreeRtosObj, xTaskGetTickCount())
-    .Times(1);
+        .Times(1);
     EXPECT_CALL(MockFreeRtosObj, 
                 xTimerGenericCommand(_, tmrCOMMAND_START, _, NULL, 0))
-    .Times(1);
+        .Times(1);
     EXPECT_CALL(MockFreeRtosObj,
                 xTimerGenericCommand(_, tmrCOMMAND_STOP, 0U, NULL, 0))
-    .Times(1);
+        .Times(1);
 
     EXPECT_TRUE(heart_beat_->StartMonitoring());
     EXPECT_TRUE(heart_beat_->StopMonitoring());
@@ -141,7 +141,7 @@ TEST_F(HeartBeatTestFixture, StopMonitoring_2)
 
     EXPECT_CALL(MockFreeRtosObj,
                 xTimerGenericCommand(_, tmrCOMMAND_STOP, 0U, NULL, 0))
-    .Times(0);
+        .Times(0);
 
     EXPECT_FALSE(heart_beat_->StopMonitoring());
 }
@@ -162,7 +162,36 @@ TEST_F(HeartBeatTestFixture, SetMonitoringTimeout)
         MockFreeRtosObj,
         xTimerGenericCommand(_, tmrCOMMAND_CHANGE_PERIOD, 
                                 test_val / portTICK_PERIOD_MS, NULL, 0))
-    .Times(1);
+        .Times(1);
 
     heart_beat_->SetMonitoringTimeout(test_val);
+    EXPECT_THAT(heart_beat_->GetTimeout(), (uint16_t)test_val);
+}
+
+/**
+ * @brief タイマー割込み発生
+ *        シャットダウンを実行すること
+ * 
+ */
+TEST_F(HeartBeatTestFixture, Timeout_1)
+{
+    EXPECT_CALL(MockFreeRtosObj, pvTimerGetTimerID(_))
+        .WillOnce(Return(timeout_callback_instance_));
+    EXPECT_CALL(*reset_ic_, ShutdownSystem);
+
+    timeout_callback_func_(timer_);
+}
+
+/**
+ * @brief データ受信コールバック発生
+ *        監視タイマーをリセットすること
+ * 
+ */
+TEST_F(HeartBeatTestFixture, TimerReset_1)
+{
+    EXPECT_CALL(MockFreeRtosObj, xTimerGenericCommand(_,
+                                        tmrCOMMAND_RESET_FROM_ISR,
+                                        _,
+                                        0,
+                                        0));
 }

@@ -28,11 +28,10 @@
 
 class InUartCommunication
 :   public TaskBase,
-    public IUartCommunication,
-    public std::enable_shared_from_this<InUartCommunication>
+    public IUartCommunication
 {
 public:
-    InUartCommunication(std::shared_ptr<UartInterrupt>, 
+    InUartCommunication(UartInterrupt&, 
                         UART_HandleTypeDef* const);
     ~InUartCommunication();
 
@@ -52,7 +51,7 @@ private:
     static constexpr uint16_t kRecvDataSize = 256;
 
     /* メンバ変数 */
-    std::shared_ptr<UartInterrupt> uart_interrupt_; /* Uart割込みインスタンス */
+    UartInterrupt& uart_interrupt_; /* Uart割込みインスタンス */
     UART_HandleTypeDef* uart_handle_;         /* UART通信ハンドル       */
     uint8_t recv_data_;                     /* UART割込みのデータ格納先       */
     std::queue<uint8_t> recv_buffer_;       /* 受信バッファ                   */

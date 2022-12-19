@@ -9,7 +9,7 @@ class INotificationUartIrq
 {
 public:
     using NotifyHeartBeatCallback
-            = std::function<void(std::shared_ptr<void>)>;
+            = std::function<void(void*)>;
 
     virtual bool RegistNotifyHeartBeatCallback( void* const, 
                                                 NotifyHeartBeatCallback) = 0;

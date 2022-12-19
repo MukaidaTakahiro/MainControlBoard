@@ -28,7 +28,7 @@ constexpr uint8_t ExternalCommunication::kPacketHeader2;
  * @param excomm_task 外部通信タスククラスのインスタンス
  */
 ExternalCommunication::ExternalCommunication(
-        std::shared_ptr<IUartCommunication> uart_comm)
+        IUartCommunication& uart_comm)
 :   TaskBase("Excomm", 3, 512),
     uart_comm_(uart_comm), 
     callback_instance_(nullptr),
@@ -69,7 +69,7 @@ bool ExternalCommunication::Init()
  * @return bool 
  */
 bool ExternalCommunication::RegistNotifyCallback(
-                    std::shared_ptr<void> callback_instance, 
+                    void* callback_instance, 
                     NotifyRecvCmdCallbackEntry notify_recv_cmd,
                     NotifyPacketSyntaxErrCallbackEntry notify_packet_syntax_err,
                     NotifyChecksumErrCallbackEntry notify_checksum_err)
@@ -126,10 +126,10 @@ bool ExternalCommunication::SendCmdPacket(const std::vector<uint8_t> cmd)
     uint8_t checksum = CalcChecksum(packet);
     packet.push_back(checksum);
 
-    HAL_GPIO_WritePin(Debug1_GPIO_Port, Debug1_Pin, GPIO_PIN_RESET);
+    //HAL_GPIO_WritePin(Debug1_GPIO_Port, Debug1_Pin, GPIO_PIN_RESET);
 
     /* パケット送信 */
-    return uart_comm_->SendMsg(packet);
+    return uart_comm_.SendMsg(packet);
 }
 
 /***********************************************************/
@@ -151,23 +151,30 @@ inline void ExternalCommunication::ParsePacket()
     static std::vector<uint8_t> parse_buffer;
     parse_buffer.reserve(kMaxCmdSize);
 
-    uart_comm_->WaitReceiveData(portMAX_DELAY);
+    uart_comm_.WaitReceiveData(portMAX_DELAY);
 
-    while (!uart_comm_->IsUartEmpty())
+    while (!uart_comm_.IsUartEmpty())
     {
-        parse_buffer.push_back(uart_comm_->ReadByte());
+        parse_buffer.push_back(uart_comm_.ReadByte());
     }
 
     auto result = ParseSyntax(parse_buffer);
+
+    while (result == PacketParsingResult::kMismatch)
+    {
+        parse_buffer.erase(parse_buffer.begin());
+        result = ParseSyntax(parse_buffer);
+    }
 
     uint16_t packet_length;
 
     switch (result)
     {
     case PacketParsingResult::kParsing:
+    case PacketParsingResult::kMismatch:
         break;
     case PacketParsingResult::kReceived:
-        HAL_GPIO_WritePin(Debug1_GPIO_Port, Debug1_Pin, GPIO_PIN_SET);
+        //HAL_GPIO_WritePin(Debug1_GPIO_Port, Debug1_Pin, GPIO_PIN_SET);
         packet_length = static_cast<uint16_t>(parse_buffer[kIndexLength]);
         notify_recv_cmd_(   callback_instance_,
                             {parse_buffer.begin() + 3,
@@ -176,10 +183,6 @@ inline void ExternalCommunication::ParsePacket()
                             parse_buffer.begin() + packet_length);
 
         //HAL_GPIO_TogglePin(Debug1_GPIO_Port, Debug1_Pin);
-        break;
-
-    case PacketParsingResult::kMismatch:
-        parse_buffer.erase(parse_buffer.begin());
         break;
 
     case PacketParsingResult::kSyntaxErr:

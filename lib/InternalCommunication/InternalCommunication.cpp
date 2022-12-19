@@ -23,8 +23,7 @@ constexpr uint16_t InternalCommunication::kHeader1Index;
 constexpr uint16_t InternalCommunication::kHeader2Index;
 constexpr uint16_t InternalCommunication::kLengthIndex;
 
-InternalCommunication::InternalCommunication(
-                        std::shared_ptr<IUartCommunication> uart_comm)
+InternalCommunication::InternalCommunication(IUartCommunication& uart_comm)
 :   uart_comm_(uart_comm)
 {
 }
@@ -42,16 +41,16 @@ InternalCommunication::~InternalCommunication()
  */
 bool InternalCommunication::SendInCmdPacket(
                         const std::vector<uint8_t> send_cmd,
-                        std::vector<uint8_t>* response)
+                        std::vector<uint8_t>& response)
 {
     auto send_packet = MakePacket(send_cmd);
 
 
-    if (!uart_comm_->SendMsg(send_packet))
+    if (!uart_comm_.SendMsg(send_packet))
     {
         return false;
     }
-    HAL_GPIO_WritePin(Debug1_GPIO_Port, Debug1_Pin, GPIO_PIN_SET);
+    //HAL_GPIO_WritePin(Debug1_GPIO_Port, Debug1_Pin, GPIO_PIN_SET);
 
     /* 受信待ち */
     /* レスポンスタイムアウトセット */
@@ -71,7 +70,7 @@ bool InternalCommunication::SendInCmdPacket(
  * @return bool 
  */
 bool InternalCommunication::ReceiveResponse(
-        std::vector<uint8_t>* response)
+        std::vector<uint8_t>& response)
 {
     std::vector<uint8_t> recv_buffer;
     const auto start_time = xTaskGetTickCount();
@@ -90,14 +89,14 @@ bool InternalCommunication::ReceiveResponse(
         auto timeout = tick_comm_timeout - elapsed_time;
 
         /* タイムアウト */
-        if (!uart_comm_->WaitReceiveData(timeout))
+        if (!uart_comm_.WaitReceiveData(timeout))
         {
             return false;
         }
 
-        while (!uart_comm_->IsUartEmpty())
+        while (!uart_comm_.IsUartEmpty())
         {
-            recv_buffer.push_back(uart_comm_->ReadByte());
+            recv_buffer.push_back(uart_comm_.ReadByte());
         }
 
         if(recv_buffer.size() != 0)
@@ -124,16 +123,16 @@ bool InternalCommunication::ReceiveResponse(
             
             case ParsingResult::kComplete:
                 uint16_t packet_length = recv_buffer[kLengthIndex];
-                response->insert(   response->begin(), 
+                response.insert(   response.begin(), 
                                     recv_buffer.begin() + 3, 
                                     recv_buffer.begin() + packet_length - 1);
 //                std::copy(  recv_buffer.begin() + 3,
 //                            recv_buffer.begin() + packet_length - 1,
 //                            (*response).begin());
 
-                uint16_t size = response->size();
+                uint16_t size = response.size();
                 uint8_t debug_buff[size] = {0};
-                std::copy(response->begin(), response->end(), debug_buff);
+                std::copy(response.begin(), response.end(), debug_buff);
 
                 return true;
             }

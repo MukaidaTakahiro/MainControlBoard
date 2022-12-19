@@ -12,7 +12,7 @@ class IInternalCommunication
 public:
     virtual bool SendInCmdPacket(   
                             const std::vector<uint8_t>,
-                            std::vector<uint8_t>*) = 0;
+                            std::vector<uint8_t>&) = 0;
 };
 
 #endif /* I_INTERNAL_COMMUNICATION_H_ */

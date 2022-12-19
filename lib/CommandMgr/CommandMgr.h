@@ -15,14 +15,14 @@
 
 #include "CommandList.h"
 
-class CommandMgr: public std::enable_shared_from_this<CommandMgr>
+class CommandMgr
 {
 public:
-	CommandMgr(	const std::shared_ptr<IExternalCommunication>,
-				const std::shared_ptr<IThrusterMgr>,
-				const std::shared_ptr<IExternalBoard>,
-				const std::shared_ptr<IBmsMgr>,
-				const std::shared_ptr<IHeartBeat>);
+	CommandMgr(	IExternalCommunication&,
+				IThrusterMgr&,
+				IExternalBoard&,
+				IBmsMgr&,
+				IHeartBeat&);
 	virtual ~CommandMgr();
 
 	bool Init();
@@ -36,32 +36,34 @@ private:
 	static constexpr uint16_t kMsgBufferSize = 128;
 
 	/* メンバ変数宣言 */
-	const std::shared_ptr<IExternalCommunication> ex_comm_;
-	const std::shared_ptr<IThrusterMgr> thruster_mgr_;
-	const std::shared_ptr<IExternalBoard> ex_board_;
-	const std::shared_ptr<IBmsMgr> bms_mgr_;
-	const std::shared_ptr<IHeartBeat> heart_beat_;
+	IExternalCommunication& ex_comm_;
+	IThrusterMgr& thruster_mgr_;
+	IExternalBoard& ex_board_;
+	IBmsMgr& bms_mgr_;
+	IHeartBeat& heart_beat_;
 
 	/* メンバ関数宣言 */
-	static void DetectRecvCmdEntryFunc(std::shared_ptr<void>, 
-										std::vector<uint8_t>);
-	static void DetectPacketSyntaxErrEntryFunc(std::shared_ptr<void>);
-	static void DetectCheckSumErrEntryFunc(std::shared_ptr<void>);
-	bool ParseCmd(std::vector<uint8_t>);
+	static void DetectRecvCmdEntryFunc(void*, const std::vector<uint8_t>&);
+	static void DetectPacketSyntaxErrEntryFunc(void*);
+	static void DetectCheckSumErrEntryFunc(void*);
+	bool ParseCmd(const std::vector<uint8_t>&);
 	bool IssueCheckSumErr();
 	bool IssuePacketSyntaxErr();
 	bool IssueUndefinedCmdErr();
 	bool IssueCmdSyntaxErr();
 	bool IssueSystemErr();
-	std::shared_ptr<CommandBase> MakeCmdInstance(uint8_t);
+	std::unique_ptr<CommandBase> MakeCmdInstance(uint8_t);
 
 public:
-	/* コマンド値定義 */
-	static constexpr uint8_t kCmdError       = 0x01;
-	static constexpr uint8_t kCmdSetBobPower = 0x02;
-	static constexpr uint8_t kCmdSetPrbPower = 0x04;
-	static constexpr uint8_t kCmdSetEobPower = 0x06;
-	static constexpr uint8_t kCmdControl     = 0x18;
+    /* コマンド値定義 */
+    static constexpr uint8_t kCmdError          = 0x01;
+    static constexpr uint8_t kCmdSetBobPower    = 0x02;
+    static constexpr uint8_t kCmdSetPrbPower    = 0x04;
+    static constexpr uint8_t kCmdSetEobPower    = 0x06;
+    static constexpr uint8_t kCmdGetFwVer       = 0x10;
+    static constexpr uint8_t kCmdSetCommMonitor = 0x12;
+    static constexpr uint8_t kCmdGetCommMonitor = 0x14;
+    static constexpr uint8_t kCmdControl        = 0x18;
 };
 
 #endif /* SRC_COMMAND_MGR_H_ */

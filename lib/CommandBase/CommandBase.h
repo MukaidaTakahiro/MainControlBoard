@@ -15,10 +15,10 @@ public:
     virtual ~CommandBase();
 
     virtual bool CheckCmdLen(uint16_t) final;
-    virtual bool ExcuteCmd(std::vector<uint8_t>) = 0;
+    virtual bool ExcuteCmd(const std::vector<uint8_t>&) = 0;
     virtual std::vector<uint8_t> CreateResponse() = 0;
 protected:
-    const uint16_t cmd_len_;
+    const uint16_t arg_len_;
     std::vector<uint8_t> response_;
 };
 

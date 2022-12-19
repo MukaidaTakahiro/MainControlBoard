@@ -19,6 +19,7 @@
 #include "InUartCommunication.h"
 #include "HeartBeat.h"
 #include "ExternalBoard.h"
+#include "ResetIc.h"
 
 class MainRoutine: public TaskBase
 {
@@ -31,20 +32,26 @@ public:
     void LedBeatRtn();
     void PrbCommTest();
 
-    std::shared_ptr<UartInterrupt> uart_interrupt_;
-    std::shared_ptr<ExUartCommunication> ex_uart_comm_;
-    std::shared_ptr<ExternalCommunication> ex_comm_;
-    std::shared_ptr<ExternalBoard> ex_board_;
-    std::shared_ptr<CommandMgr> cmd_mgr_;
-    std::shared_ptr<HeartBeat> heart_beat_;
+    UartInterrupt& uart_interrupt_;
 
 
-    std::shared_ptr<InUartCommunication> bob_uart_comm_;
-    std::shared_ptr<InUartCommunication> prb_uart_comm_;
-    std::shared_ptr<InUartCommunication> eob_uart_comm_;
-    std::shared_ptr<InternalCommunication> bob_comm_;
-    std::shared_ptr<InternalCommunication> prb_comm_;
-    std::shared_ptr<InternalCommunication> eob_comm_;
+    std::unique_ptr<ExUartCommunication> ex_uart_comm_;
+    std::unique_ptr<ExternalCommunication> ex_comm_;
+
+    std::unique_ptr<InUartCommunication> bob_uart_comm_;
+    std::unique_ptr<InUartCommunication> prb_uart_comm_;
+    std::unique_ptr<InUartCommunication> eob_uart_comm_;
+    std::unique_ptr<InternalCommunication> bob_comm_;
+    std::unique_ptr<InternalCommunication> prb_comm_;
+    std::unique_ptr<InternalCommunication> eob_comm_;    
+    
+
+
+    std::unique_ptr<ExternalBoard> ex_board_;
+    std::unique_ptr<Bms> bms_;
+    std::unique_ptr<BmsMgr> bms_mgr_;
+    std::unique_ptr<ResetIc> reset_ic_;
+    std::unique_ptr<HeartBeat> heart_beat_;
 
     std::unique_ptr<Thruster> thruster_0_;
     std::unique_ptr<Thruster> thruster_1_;
@@ -57,6 +64,7 @@ public:
 
     std::unique_ptr<ThrusterMgr> thruster_mgr_;
     
+    std::unique_ptr<CommandMgr> cmd_mgr_;
 
 private:
     virtual void PerformTask();

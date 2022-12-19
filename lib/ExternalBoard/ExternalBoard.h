@@ -15,7 +15,6 @@
 
 #include <stdint.h>
 #include <memory>
-#include <map>
 
 #include "IInternalCommunication.h"
 #include "IExternalBoard.h"
@@ -24,21 +23,20 @@ class ExternalBoard: public IExternalBoard
 {
 public:
 
-    using InternalCommunicationPtr 
-                        = std::shared_ptr<IInternalCommunication>;
-
-    ExternalBoard(  const InternalCommunicationPtr,
-                    const InternalCommunicationPtr,
-                    const InternalCommunicationPtr);
+    ExternalBoard(  IInternalCommunication&,
+                    IInternalCommunication&,
+                    IInternalCommunication&);
     ~ExternalBoard();
 
     virtual bool SendCmd(   BoardId,
                             const std::vector<uint8_t>, 
-                            std::vector<uint8_t>*);
+                            std::vector<uint8_t>&);
 
 private:
 
-    std::map<BoardId, InternalCommunicationPtr> board_comm_list_;
+    IInternalCommunication& bob_comm_;
+    IInternalCommunication& prb_comm_;
+    IInternalCommunication& eob_comm_;
 };
 
 #endif /* EXTERNAL_BOARD_ */

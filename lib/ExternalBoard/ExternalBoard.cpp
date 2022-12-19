@@ -1,12 +1,12 @@
 ﻿#include "ExternalBoard.h"
 
-ExternalBoard::ExternalBoard(   const InternalCommunicationPtr bob_comm,
-                                const InternalCommunicationPtr prb_comm,
-                                const InternalCommunicationPtr eob_comm)
+ExternalBoard::ExternalBoard(   IInternalCommunication& bob_comm,
+                                IInternalCommunication& prb_comm,
+                                IInternalCommunication& eob_comm)
+:   bob_comm_(bob_comm), 
+    prb_comm_(prb_comm),
+    eob_comm_(eob_comm)
 {
-    board_comm_list_[BoardId::kBob] = bob_comm;
-    board_comm_list_[BoardId::kPrb] = prb_comm;
-    board_comm_list_[BoardId::kEob] = eob_comm;
 }
 
 ExternalBoard::~ExternalBoard()
@@ -16,14 +16,22 @@ ExternalBoard::~ExternalBoard()
 
 bool ExternalBoard::SendCmd(BoardId dest, 
                             const std::vector<uint8_t> send_cmd,
-                            std::vector<uint8_t>* response)
+                            std::vector<uint8_t>& response)
 {
-    bool result;
+    bool result = false;
 
-    //メッセージ送信
-    result = 
-        board_comm_list_[dest]->SendInCmdPacket(send_cmd, response);
-
+    switch (dest)
+    {
+    case BoardId::kBob:
+        result = bob_comm_.SendInCmdPacket(send_cmd, response);
+        break;
+    case BoardId::kPrb:
+        result = prb_comm_.SendInCmdPacket(send_cmd, response);
+        break;
+    case BoardId::kEob:
+        result = eob_comm_.SendInCmdPacket(send_cmd, response);
+        break;
+    }
 
     return result;
 }
